@@ -88,6 +88,103 @@ IntegerMatrix AtoU_SIR(IntegerMatrix A){
   return U;
 }
 
+// A is a TxN matrix
+// K is the number of states 0:(K-1)
+// [[Rcpp::export]]
+IntegerMatrix AtoX(IntegerMatrix A, int K){
+  int T = A.nrow();
+  int N = A.ncol();
+  int count = 0;
+  IntegerMatrix X(T, K);
+  for(int tt=0; tt < T; tt++){
+    for(int kk=0; kk < K; kk++){
+      count = 0;
+      for(int nn=0; nn < N; nn++){
+        if(A(tt,nn) == kk){
+          count++;
+        }
+      } 
+      X(tt, kk) = count;
+    }
+  } 
+  return X;
+}
+
+// Extract a single row of A
+// A is a TxN matrix
+// K is the number of states 0:(K-1)
+// @return 1xN matrix
+// [[Rcpp::export]]
+IntegerMatrix extractRowA(IntegerMatrix A, int t){
+  int N = A.ncol();
+  IntegerMatrix row(1, N);
+  for(int nn=0; nn < N; nn++){
+    row(0,nn) = A(t, nn);
+  }
+  return row;
+  
+}
+
+// Extract a single column of A
+// A is a TxN matrix
+// n is the agent we want to look at
+// @return Tx1 matrix
+// [[Rcpp::export]]
+IntegerMatrix extractColA(IntegerMatrix A, int n){
+  int T = A.nrow();
+  IntegerMatrix col(T, 1);
+  for(int tt=0; tt < T; tt++){
+    col(tt, 0) = A(tt, n);
+  }
+  return col;
+  
+}
+
+// U to X SIR
+// 
+// U is a 3xN matrix (A0, SMax, IMax)
+// T is max number of time steps (0:(T-1))
+// X is a T x 3 matrix 
+// @return Tx3 matrix
+// [[Rcpp::export]]
+IntegerMatrix UtoX_SIR(IntegerMatrix U, int T){
+  IntegerMatrix X(T, 3);
+  int N = U.ncol();
+  int SMax;
+  int IMax;
+  int A0;
+  for(int nn=0; nn < N; nn++){
+    SMax = U(1, nn);
+    IMax = U(2, nn);
+    A0 = U(0, nn);
+    for(int tt=0; tt < T; tt++){
+      if(A0 == 0){ // agent starts S
+        if(tt <= SMax){
+          X(tt, 0)++;
+        } else if(tt <= IMax){
+          X(tt,1)++;
+        } else{
+          X(tt,2)++;
+        }
+        
+      } else if (A0 == 1){ // agent starts I
+          if(tt <= IMax){
+            X(tt, 1)++; 
+          } else {
+            X(tt, 2)++;
+          }
+      } else if(A0 == 2){ // agent starts R
+        X(tt, 2)++;
+      }
+      
+    }
+  }
+  return X;
+}
+
+
+
+
 
 // You can include R code blocks in C++ files processed with sourceCpp
 // (useful for testing and development). The R code will be automatically 
@@ -102,11 +199,19 @@ Tmax <- 3
 A <- UtoA_SIR(U, Tmax)
 A
 
+## U to X
+X <- UtoX_SIR(U, Tmax)
+X
+
+
 A <- matrix(c(0, 0, 1, 2,
               0, 1, 1, 2,
               1, 2, 1, 2), byrow = TRUE, nrow = 3)
 U <- AtoU_SIR(A)
 U
+
+## A to X
+X <- AtoX(A, K = 3)
 
 UtoA_SIR(AtoU_SIR(A), Tmax)
 
@@ -116,3 +221,5 @@ U <- matrix(c(0, 0, 1, 0,
 AtoU_SIR(UtoA_SIR(U, Tmax))
 
 */
+
+

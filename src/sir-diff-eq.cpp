@@ -110,3 +110,5 @@ env_mat <- matrix(c(0, 1, 1,
 map <- initializeNeighbors(env_mat)
 map
 ***/
+
+

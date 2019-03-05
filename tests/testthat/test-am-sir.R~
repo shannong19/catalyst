@@ -1,0 +1,6 @@
+context("AM-SIR")
+
+test_that("AM SIR functions",{
+
+
+    })

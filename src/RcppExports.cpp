@@ -5,6 +5,43 @@
 
 using namespace Rcpp;
 
+// updateAgent_SIR
+int updateAgent_SIR(int current_state, double prob);
+RcppExport SEXP _Catalyst_updateAgent_SIR(SEXP current_stateSEXP, SEXP probSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type current_state(current_stateSEXP);
+    Rcpp::traits::input_parameter< double >::type prob(probSEXP);
+    rcpp_result_gen = Rcpp::wrap(updateAgent_SIR(current_state, prob));
+    return rcpp_result_gen;
+END_RCPP
+}
+// AMTime_SIR
+IntegerVector AMTime_SIR(IntegerVector A, NumericVector prob_inf, NumericVector prob_rec);
+RcppExport SEXP _Catalyst_AMTime_SIR(SEXP ASEXP, SEXP prob_infSEXP, SEXP prob_recSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerVector >::type A(ASEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type prob_inf(prob_infSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type prob_rec(prob_recSEXP);
+    rcpp_result_gen = Rcpp::wrap(AMTime_SIR(A, prob_inf, prob_rec));
+    return rcpp_result_gen;
+END_RCPP
+}
+// get_n_nbr_inf
+IntegerVector get_n_nbr_inf(List nbr_list, IntegerVector inf_inds);
+RcppExport SEXP _Catalyst_get_n_nbr_inf(SEXP nbr_listSEXP, SEXP inf_indsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< List >::type nbr_list(nbr_listSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type inf_inds(inf_indsSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_n_nbr_inf(nbr_list, inf_inds));
+    return rcpp_result_gen;
+END_RCPP
+}
 // rcpp_hello
 List rcpp_hello();
 RcppExport SEXP _Catalyst_rcpp_hello() {
@@ -15,9 +52,116 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// sirLoop
+NumericVector sirLoop(NumericVector x, double beta, double gamma, int T);
+RcppExport SEXP _Catalyst_sirLoop(SEXP xSEXP, SEXP betaSEXP, SEXP gammaSEXP, SEXP TSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< double >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< double >::type gamma(gammaSEXP);
+    Rcpp::traits::input_parameter< int >::type T(TSEXP);
+    rcpp_result_gen = Rcpp::wrap(sirLoop(x, beta, gamma, T));
+    return rcpp_result_gen;
+END_RCPP
+}
+// initializeNeighbors
+std::map<int, IntegerVector> initializeNeighbors(IntegerMatrix env_mat);
+RcppExport SEXP _Catalyst_initializeNeighbors(SEXP env_matSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerMatrix >::type env_mat(env_matSEXP);
+    rcpp_result_gen = Rcpp::wrap(initializeNeighbors(env_mat));
+    return rcpp_result_gen;
+END_RCPP
+}
+// UtoA_SIR
+IntegerMatrix UtoA_SIR(IntegerMatrix U, int Tmax);
+RcppExport SEXP _Catalyst_UtoA_SIR(SEXP USEXP, SEXP TmaxSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerMatrix >::type U(USEXP);
+    Rcpp::traits::input_parameter< int >::type Tmax(TmaxSEXP);
+    rcpp_result_gen = Rcpp::wrap(UtoA_SIR(U, Tmax));
+    return rcpp_result_gen;
+END_RCPP
+}
+// AtoU_SIR
+IntegerMatrix AtoU_SIR(IntegerMatrix A);
+RcppExport SEXP _Catalyst_AtoU_SIR(SEXP ASEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerMatrix >::type A(ASEXP);
+    rcpp_result_gen = Rcpp::wrap(AtoU_SIR(A));
+    return rcpp_result_gen;
+END_RCPP
+}
+// AtoX
+IntegerMatrix AtoX(IntegerMatrix A, int K);
+RcppExport SEXP _Catalyst_AtoX(SEXP ASEXP, SEXP KSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerMatrix >::type A(ASEXP);
+    Rcpp::traits::input_parameter< int >::type K(KSEXP);
+    rcpp_result_gen = Rcpp::wrap(AtoX(A, K));
+    return rcpp_result_gen;
+END_RCPP
+}
+// extractRowA
+IntegerMatrix extractRowA(IntegerMatrix A, int t);
+RcppExport SEXP _Catalyst_extractRowA(SEXP ASEXP, SEXP tSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerMatrix >::type A(ASEXP);
+    Rcpp::traits::input_parameter< int >::type t(tSEXP);
+    rcpp_result_gen = Rcpp::wrap(extractRowA(A, t));
+    return rcpp_result_gen;
+END_RCPP
+}
+// extractColA
+IntegerMatrix extractColA(IntegerMatrix A, int n);
+RcppExport SEXP _Catalyst_extractColA(SEXP ASEXP, SEXP nSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerMatrix >::type A(ASEXP);
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    rcpp_result_gen = Rcpp::wrap(extractColA(A, n));
+    return rcpp_result_gen;
+END_RCPP
+}
+// UtoX_SIR
+IntegerMatrix UtoX_SIR(IntegerMatrix U, int T);
+RcppExport SEXP _Catalyst_UtoX_SIR(SEXP USEXP, SEXP TSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerMatrix >::type U(USEXP);
+    Rcpp::traits::input_parameter< int >::type T(TSEXP);
+    rcpp_result_gen = Rcpp::wrap(UtoX_SIR(U, T));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_Catalyst_updateAgent_SIR", (DL_FUNC) &_Catalyst_updateAgent_SIR, 2},
+    {"_Catalyst_AMTime_SIR", (DL_FUNC) &_Catalyst_AMTime_SIR, 3},
+    {"_Catalyst_get_n_nbr_inf", (DL_FUNC) &_Catalyst_get_n_nbr_inf, 2},
     {"_Catalyst_rcpp_hello", (DL_FUNC) &_Catalyst_rcpp_hello, 0},
+    {"_Catalyst_sirLoop", (DL_FUNC) &_Catalyst_sirLoop, 4},
+    {"_Catalyst_initializeNeighbors", (DL_FUNC) &_Catalyst_initializeNeighbors, 1},
+    {"_Catalyst_UtoA_SIR", (DL_FUNC) &_Catalyst_UtoA_SIR, 2},
+    {"_Catalyst_AtoU_SIR", (DL_FUNC) &_Catalyst_AtoU_SIR, 1},
+    {"_Catalyst_AtoX", (DL_FUNC) &_Catalyst_AtoX, 2},
+    {"_Catalyst_extractRowA", (DL_FUNC) &_Catalyst_extractRowA, 2},
+    {"_Catalyst_extractColA", (DL_FUNC) &_Catalyst_extractColA, 2},
+    {"_Catalyst_UtoX_SIR", (DL_FUNC) &_Catalyst_UtoX_SIR, 2},
     {NULL, NULL, 0}
 };
 
