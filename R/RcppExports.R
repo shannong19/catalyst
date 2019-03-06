@@ -17,8 +17,8 @@ rcpp_hello <- function() {
     .Call(`_Catalyst_rcpp_hello`)
 }
 
-sirLoop <- function(x, beta, gamma, T) {
-    .Call(`_Catalyst_sirLoop`, x, beta, gamma, T)
+sirLoop <- function(x, beta, gamma, T, prob_type) {
+    .Call(`_Catalyst_sirLoop`, x, beta, gamma, T, prob_type)
 }
 
 initializeNeighbors <- function(env_mat) {

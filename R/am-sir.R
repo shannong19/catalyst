@@ -37,8 +37,9 @@ am_sir <- function(L, T,
     
 
     if(use_exp_X){
-        X0 <- AtoX(A[1,, drop = FALSE], 3)
-        X_theor <- sirLoop(X0, par1_vec[1], gamma_vec[1], T)
+      pf <- ifelse(prob_fxn == "KM", 0, 1)
+      X0 <- AtoX(A[1,, drop = FALSE], 3)
+      X_theor <- sirLoop(X0, par1_vec[1], gamma_vec[1], T, pf)
     } else{
         X_theor <- NULL
     }
@@ -130,12 +131,13 @@ am_sir_one_sim <- function(ll = 1, A, prob_fxn = "KM",
 
     }
     X <- AtoX(A, 3)
-    if(!keep_A){
-        A <- NULL
-    }
     if(keep_U){
         U <- AtoU_SIR(A)
     }
+    if(!keep_A){
+        A <- NULL
+    }
+    
     
     return(list(X = X, U = U, A = A))
 

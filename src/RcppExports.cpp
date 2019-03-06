@@ -53,8 +53,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // sirLoop
-NumericVector sirLoop(NumericVector x, double beta, double gamma, int T);
-RcppExport SEXP _Catalyst_sirLoop(SEXP xSEXP, SEXP betaSEXP, SEXP gammaSEXP, SEXP TSEXP) {
+NumericVector sirLoop(NumericVector x, double beta, double gamma, int T, int prob_type);
+RcppExport SEXP _Catalyst_sirLoop(SEXP xSEXP, SEXP betaSEXP, SEXP gammaSEXP, SEXP TSEXP, SEXP prob_typeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -62,7 +62,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type beta(betaSEXP);
     Rcpp::traits::input_parameter< double >::type gamma(gammaSEXP);
     Rcpp::traits::input_parameter< int >::type T(TSEXP);
-    rcpp_result_gen = Rcpp::wrap(sirLoop(x, beta, gamma, T));
+    Rcpp::traits::input_parameter< int >::type prob_type(prob_typeSEXP);
+    rcpp_result_gen = Rcpp::wrap(sirLoop(x, beta, gamma, T, prob_type));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -154,7 +155,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_Catalyst_AMTime_SIR", (DL_FUNC) &_Catalyst_AMTime_SIR, 3},
     {"_Catalyst_get_n_nbr_inf", (DL_FUNC) &_Catalyst_get_n_nbr_inf, 2},
     {"_Catalyst_rcpp_hello", (DL_FUNC) &_Catalyst_rcpp_hello, 0},
-    {"_Catalyst_sirLoop", (DL_FUNC) &_Catalyst_sirLoop, 4},
+    {"_Catalyst_sirLoop", (DL_FUNC) &_Catalyst_sirLoop, 5},
     {"_Catalyst_initializeNeighbors", (DL_FUNC) &_Catalyst_initializeNeighbors, 1},
     {"_Catalyst_UtoA_SIR", (DL_FUNC) &_Catalyst_UtoA_SIR, 2},
     {"_Catalyst_AtoU_SIR", (DL_FUNC) &_Catalyst_AtoU_SIR, 1},

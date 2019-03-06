@@ -1,0 +1,84 @@
+context("time to plot")
+
+test_that("plot_sims", {
+ 
+    L <- 100
+    T <- 100
+    N <-  1000
+    A0 <- c(rep(0, .95 * N), rep(1, .05 * N))
+    prob_fxn <- "KM"
+    par1_vec <- rep(.1,N)
+    gamma_vec <- rep(0.03,N)
+    ## par1_vec <- runif(N)
+    ## gamma_vec <- runif(N)
+    nbr_list <- NULL
+    use_exp_X <- TRUE
+    keep_A <- FALSE
+    keep_U <- FALSE
+    write_sim <- FALSE
+    writing_list <- NULL
+    do_par <- FALSE
+    ##
+    t <- proc.time()[3]
+    sims <- am_sir(L = L, T = T,
+                   A0 = A0, prob_fxn = prob_fxn,
+                   par1_vec = par1_vec,
+                   gamma_vec = gamma_vec,
+                   nbr_list = nbr_list,
+                   use_exp_X = use_exp_X,
+                   keep_A = keep_A,
+                   keep_U = keep_U,
+                   write_sim = write_sim,
+                   writing_list = NULL,
+                   do_par = do_par)
+    proc.time()[3] - t
+
+
+
+    g <- plot_sims.reg(sims, K = 3,
+                   beta = .1,
+                   gamma = .03,
+                   N = N,
+                   S0 = 950,
+                   I0 = 50,
+                   L = L,
+                   T = 100,
+                   pretty = TRUE)
+
+    ##devtools::load_all()
+    g <- plot_mean_var.reg(sims, K = 3,
+                   beta = .1,
+                   gamma = .03,
+                   N = N,
+                   S0 = 950,
+                   I0 = 50,
+                   L = L,
+                   T = 100,
+                   pretty = TRUE)
+
+
+    ## Loglinear
+    devtools::load_all()
+    g <- plot_sims.loglin(sims, K = 3,
+                   beta = .1,
+                   gamma = .03,
+                   N = N,
+                   S0 = 950,
+                   I0 = 50,
+                   L = L,
+                   T = 100,
+                   pretty = TRUE)
+
+    
+    df <- as.data.frame(sims$X_mat)
+    df$x <- df$R / N
+    df$y <- -log(df$S / df$S[1])
+    dfm <- df
+    
+    summary_df <- plyr::ddply(dfm, .var = c("t", "variable"),
+                              .fun  = function(df){
+                                  c(mean = mean(df$value), var = var(df$value))
+                              })
+
+    
+})

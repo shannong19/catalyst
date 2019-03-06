@@ -11,8 +11,11 @@ using namespace Rcpp;
 //   http://gallery.rcpp.org/
 //
 
+
+// for prob_type 0 is KM and 1 is RF
 // [[Rcpp::export]]
-NumericVector sirLoop(NumericVector x, double beta, double gamma, int T) {
+NumericVector sirLoop(NumericVector x, double beta, double gamma, int T,
+                      int prob_type) {
   double N = x[0] + x[1] + x[2];
   NumericMatrix new_x(T, 3);
   // Initialize matrix
@@ -21,13 +24,21 @@ NumericVector sirLoop(NumericVector x, double beta, double gamma, int T) {
   new_x(0, 2) = x[2];
 
   for(int tt = 1; tt < T; tt++){
-    new_x(tt, 0) = new_x(tt-1, 0) - beta * new_x(tt-1,0) * new_x(tt-1, 1) / N;
-    new_x(tt, 2) = new_x(tt-1, 2) + gamma * new_x(tt-1, 1);
-    new_x(tt, 1) = N - new_x(tt, 0) - new_x(tt, 2);
+    if(prob_type == 1){
+      new_x(tt, 0) = new_x(tt-1, 0) - beta * new_x(tt-1,0) * new_x(tt-1, 1) / N;
+      new_x(tt, 2) = new_x(tt-1, 2) + gamma * new_x(tt-1, 1);
+      new_x(tt, 1) = N - new_x(tt, 0) - new_x(tt, 2);
+    }
+    else{
+      new_x(tt, 0) = new_x(tt-1, 0) - 
+        new_x(tt-1,0)  * (1 - pow((1-beta/N), new_x(tt-1, 1)));
+      new_x(tt, 2) = new_x(tt-1, 2) + gamma * new_x(tt-1, 1);
+      new_x(tt, 1) = N - new_x(tt, 0) - new_x(tt, 2);
+    }
   }
 
   return new_x;
-}
+} 
 
 // [[Rcpp::export]]
 std::map<int, IntegerVector> initializeNeighbors(IntegerMatrix env_mat){
@@ -46,7 +57,7 @@ std::map<int, IntegerVector> initializeNeighbors(IntegerMatrix env_mat){
     for(int mm=0; mm < N; mm++){
        for(int ee=0; ee < E; ee++){
         ref_env = env_mat(nn, ee);
-        if(ref_env != 0 & nn != mm){
+        if((ref_env != 0) & (nn != mm)){
           nbr_env = env_mat(mm, ee);
           if(ref_env == nbr_env){
             Rprintf("n: %d, m %d, ee %d \n", nn, mm, ee);
@@ -99,7 +110,7 @@ gamma <- .03
 N <- sum(x)
 T <- 100
 
-out <- sirLoop(x, beta, gamma, T)
+out <- sirLoop(x, beta, gamma, T, 0)
 head(out)
 
 env_mat <- matrix(c(0, 1, 1,

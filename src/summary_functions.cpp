@@ -200,6 +200,7 @@ A <- UtoA_SIR(U, Tmax)
 A
 
 ## U to X
+## 
 X <- UtoX_SIR(U, Tmax)
 X
 
