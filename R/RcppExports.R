@@ -25,6 +25,10 @@ initializeNeighbors <- function(env_mat) {
     .Call(`_Catalyst_initializeNeighbors`, env_mat)
 }
 
+loglike_SIR_CM <- function(T, pt, gamma, X, N) {
+    .Call(`_Catalyst_loglike_SIR_CM`, T, pt, gamma, X, N)
+}
+
 UtoA_SIR <- function(U, Tmax) {
     .Call(`_Catalyst_UtoA_SIR`, U, Tmax)
 }

@@ -78,6 +78,21 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// loglike_SIR_CM
+double loglike_SIR_CM(int T, NumericVector pt, double gamma, NumericMatrix X, int N);
+RcppExport SEXP _Catalyst_loglike_SIR_CM(SEXP TSEXP, SEXP ptSEXP, SEXP gammaSEXP, SEXP XSEXP, SEXP NSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type T(TSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type pt(ptSEXP);
+    Rcpp::traits::input_parameter< double >::type gamma(gammaSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type X(XSEXP);
+    Rcpp::traits::input_parameter< int >::type N(NSEXP);
+    rcpp_result_gen = Rcpp::wrap(loglike_SIR_CM(T, pt, gamma, X, N));
+    return rcpp_result_gen;
+END_RCPP
+}
 // UtoA_SIR
 IntegerMatrix UtoA_SIR(IntegerMatrix U, int Tmax);
 RcppExport SEXP _Catalyst_UtoA_SIR(SEXP USEXP, SEXP TmaxSEXP) {
@@ -157,6 +172,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_Catalyst_rcpp_hello", (DL_FUNC) &_Catalyst_rcpp_hello, 0},
     {"_Catalyst_sirLoop", (DL_FUNC) &_Catalyst_sirLoop, 5},
     {"_Catalyst_initializeNeighbors", (DL_FUNC) &_Catalyst_initializeNeighbors, 1},
+    {"_Catalyst_loglike_SIR_CM", (DL_FUNC) &_Catalyst_loglike_SIR_CM, 5},
     {"_Catalyst_UtoA_SIR", (DL_FUNC) &_Catalyst_UtoA_SIR, 2},
     {"_Catalyst_AtoU_SIR", (DL_FUNC) &_Catalyst_AtoU_SIR, 1},
     {"_Catalyst_AtoX", (DL_FUNC) &_Catalyst_AtoX, 2},

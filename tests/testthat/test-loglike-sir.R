@@ -166,3 +166,38 @@ test_that("sir", {
     out$par
 
 })
+
+
+test_that("loglike_sir.X and friends", {
+
+
+    par <- c(.2, .7)
+    T <- 3
+    pt <- rep(par[1], T-1)
+    U <- matrix(c(0, 0, 1, 0,
+                  0, 1, 2, 2,
+                  1, 2, 2, 2), byrow = TRUE, nrow = 3)
+    X <- UtoX_SIR(U, T)
+    x <- X[1,]
+    N <- sum(x)
+
+
+    out <- loglike_SIR_CM(T, pt, par[2], X, N)
+    exp_loglike <- (1 * log(pt[1]) + 2 * log(1-pt[1])) +
+        (0 + 1 * log(1-par[2])) +
+        (1 * log(pt[2]) + 1 * log(1-pt[2])) +
+        (1 * log(par[2]) + 1 * log(1-par[2]))
+    expect_equal(out, exp_loglike)
+
+
+    
+    out <- loglike_sir(par = par, T = T,
+                       suff_stat = X, suff_stat_type = "X",
+                       prob_fxn = "KM",
+                       neg_loglike = TRUE,
+                       use_exp_X = TRUE,
+                       x0 = x,
+                       inf_nbrs = NULL)
+
+    
+})
