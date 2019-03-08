@@ -3,6 +3,91 @@
 ## March 6, 2019 Ash Wednesday.  Truly this is penance
 
 
+#' Plot the observed
+#'
+#' @param obs data frame with t, S, I, and R columns
+#' @param ests data frame with t, S_mean, I_mean, and R_mean columns along with est_type, and optionally S_var, I_var, R_var (as percents out of total population N)
+#' @param plot_type "state" for regular SIR vs. t (faceted), "loglinear" for loglinear, and "ternary" for ternary
+#' @param CI logical.  Default is FALSE.  Should we plot confidence intervals?
+#' @return a ggplot
+plot_ests <- function(obs, ests, plot_type = "state",
+                      CI = FALSE,
+                      model_cols = c("black", "blue", "red"),
+                      xlab = "Time",
+                      ylab = "% of Individuals",
+                      title = "Observed data and fitted models",
+                      CI_lab = NULL,
+                      data_type = "Type",
+                      pretty = TRUE,
+                      model_names = c("Observed", "Model 1", "Model 2")
+                      ){
+
+    ## format obs
+    obs_df <- format_obs(obs, plot_type, CI)
+    ests_df <- format_ests(ests, plot_type, CI)
+    df <- rbind(obs_df, ests_df)
+
+    if(plot_type == "state"){
+        g <- plot_ests.state(df)
+    } else if(plot_type == "loglinear"){
+        g <- plot_ests.loglinear(df)
+    } else if(plot_type == "ternary"){
+        g <- plot_ests.ternary(df)
+    } else{
+        stop("Select one of 'state', 'loglinear', or ternary'")
+    }
+    if(pretty){
+        g <-  g + my_theme()
+    }
+    if(!is.null(CI_lab)){
+        title <-  paste(title, "with", CI_lab)
+    }
+
+    g <- g + ggplot2::labs(x = xlab, y = ylab,
+                  title = title) +
+        ggplot2::scale_colour_manual(name = data_type,
+                              values = state_cols,
+                              labels = model_names) +
+        ggplot2::scale_linetype_discrete(name = data_type,
+                                       labels = model_names) +
+        ggplot2::scale_fill_manual(name = data_type,
+                                   labels = model_names,
+                                   values = state_cols)
+    print(g)
+        
+    return(g)
+}
+
+#' Plot the ggplot estimates for the regular states
+#' 
+#' @param df data frame with columns "t", "obs", "state" (one of "S", "I", or "R"), "mean", and optionally "var",  along with "data_type"
+#' @param pretty logical.  Default is TRUE
+#' @return ggplot
+plot_ests.state <- function(df, pretty = TRUE){
+    g <- ggplot2::ggplot(data = df,
+                         ggplot2::aes(x= t, group = data_type)) +
+        ggplot2::facet_wrap(~state, nrow = 3) +
+        ggplot2:: geom_point(ggplot2::aes(y = obs,
+                                          col = data_type),
+                             col = "black", size = 2)
+    if("var" %in% colnames(df)){
+        g <- g +
+            ggplot2::geom_ribbon(
+                         ggplot2::aes(ymin = mean - 2 * sqrt(abs(var)),
+                                      ymax = mean + 2 * sqrt(abs(var)),
+                                      fill = data_type),
+                         col = NA, alpha = .2)
+        
+    }
+    g <- g + ggplot2::geom_line(ggplot2::aes(y = mean,
+                                             col = data_type,
+                                             linetype = data_type))
+
+    return(g)
+    
+        
+}
+
 #' Plot the t, X simulations
 #'
 #' @param catalyst_sims output from am_sir()

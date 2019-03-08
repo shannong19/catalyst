@@ -70,3 +70,41 @@ test_that("plot_sims", {
     
 
 })
+
+
+test_that("plot_ests.state", {
+    
+    library(ggplot2)
+    library(reshape2)
+    
+    t <- rep(1:100, 1)
+    S <- 3 * t
+    I <- log(t)
+    R <- 2 + t
+    df1 <- data.frame(t = t, S = S, I = I, R = R)
+    dfm1 <- melt(df1, id.vars = "t")
+    colnames(dfm1) <- c("t", "state", "obs")
+    dfm1$mean = NA
+    dfm1$var = NA
+    dfm1$data_type = 0
+    var_order <- c("t", "obs", "mean", "var", "data_type", "state")
+    dfm1 <- dfm1[, var_order]
+    ## est
+    df2 <- data.frame(t = rep(t, 3),
+                      mean = c(2.5 * S,
+                               1.2 * log(I),
+                               R,
+                               2.2 * S,
+                               1.4 * log(I),
+                               R + 1),
+                      var = c(rnorm(2 * 300, 300, 1)),
+                              data_type = rep(c("1", "2"),
+                                              each = 300 ),
+                      state = rep(c("S", "I", "R",
+                                    "S", "I", "R"), each = 100),
+                      obs = NA)
+    df2 <- df2[, var_order]
+
+    df <- rbind(dfm1, df2)
+    g <- plot_ests.state(df)
+})
