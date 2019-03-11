@@ -107,4 +107,70 @@ test_that("plot_ests.state", {
 
     df <- rbind(dfm1, df2)
     g <- plot_ests.state(df)
+
+
+    ##################################
+    t <- rep(1:100, 1)
+    S <- 3 * t
+    I <- log(t)
+    R <- 2 + t
+    obs <- data.frame(t = t, S = S, I = I, R = R)
+
+    t <- rep(1:100, 1)
+    S_mean <- 3 * t + 100
+    I_mean <- log(t) * 1.4
+    R_mean <- 2 + t + 90
+    S_var <- 1
+    I_var <- 4
+    R_var <- 10
+
+    ests <- data.frame(t = t, S_mean = S_mean,
+                       I_mean = I_mean,
+                       R_mean = R_mean,
+                       S_var = S_var,
+                       I_var = I_var,
+                       R_var = R_var,
+                       est_type = "cat")
+
+    g <- plot_ests(obs, ests, CI = FALSE)
+    g
+
+    
+})
+
+test_that("format_obs", {
+    t <- rep(1:100, 1)
+    S <- 3 * t
+    I <- log(t)
+    R <- 2 + t
+    df1 <- data.frame(t = t, S = S, I = I, R = R)
+
+    out <- format_obs(df1, plot_type = "state",
+                      CI = TRUE)
+    expect_true(ncol(out) == 6)
+    expect_true(all(is.na(out$mean)))
+
+})
+
+test_that("format_obs", {
+    t <- rep(1:100, 1)
+    S_mean <- 3 * t
+    I_mean <- log(t)
+    R_mean <- 2 + t
+    S_var <- 1
+    I_var <- 4
+    R_var <- 10
+    df1 <- data.frame(t = t, S_mean = S_mean,
+                      I_mean = I_mean,
+                      R_mean = R_mean,
+                      S_var = S_var,
+                      I_var = I_var,
+                      R_var = R_var,
+                      est_type = "cat")
+
+    out <- format_ests(df1, plot_type = "state",
+                      CI = FALSE)
+    expect_true(ncol(out) == 5)
+    expect_true(all(is.na(out$obs)))
+
 })

@@ -5,10 +5,11 @@
 
 #' Plot the observed
 #'
-#' @param obs data frame with t, S, I, and R columns
+#' @param obs data frame with t, S, I, and R columns (as percents out of total population N)
 #' @param ests data frame with t, S_mean, I_mean, and R_mean columns along with est_type, and optionally S_var, I_var, R_var (as percents out of total population N)
 #' @param plot_type "state" for regular SIR vs. t (faceted), "loglinear" for loglinear, and "ternary" for ternary
 #' @param CI logical.  Default is FALSE.  Should we plot confidence intervals?
+#' @param model_cols color palette
 #' @return a ggplot
 plot_ests <- function(obs, ests, plot_type = "state",
                       CI = FALSE,
@@ -46,16 +47,116 @@ plot_ests <- function(obs, ests, plot_type = "state",
     g <- g + ggplot2::labs(x = xlab, y = ylab,
                   title = title) +
         ggplot2::scale_colour_manual(name = data_type,
-                              values = state_cols,
-                              labels = model_names) +
+                                       labels = model_names,
+                                       values = model_cols) +
         ggplot2::scale_linetype_discrete(name = data_type,
-                                       labels = model_names) +
+                                       labels = model_names,) +
         ggplot2::scale_fill_manual(name = data_type,
-                                   labels = model_names,
-                                   values = state_cols)
+                                     labels = model_names,
+                                     values = model_cols)
     print(g)
         
     return(g)
+}
+
+#' Format observation data frame for plotting function
+#'
+#' @param ests data frame with t, S_mean, I_mean, and R_mean columns along with est_type, and optionally S_var, I_var, R_var (as percents out of total population N) and data_type
+#' @param plot_type "state" for regular SIR vs. t (faceted), "loglinear" for loglinear, and "ternary" for ternary
+#' @param CI logical.  Default is FALSE.  Should we plot confidence intervals?
+#' @return data frame with columns "t", "obs", "state" (one of "S", "I", or "R"), "mean", and optionally "var",  along with "data_type"
+format_ests <- function(ests, plot_type, CI){
+
+    if(plot_type == "state"){
+        var_order <- c("t", "obs", "state", "mean")
+        if(CI){
+            var_order <- c(var_order, "var", "data_type")
+        } else{
+            var_order <- c(var_order, "data_type")
+        }
+
+
+        df <- ests
+
+        df$obs <- NA
+
+        df$data_type <- factor(df$data_type,
+                               labels = 1:length(unique(df$data_type)))
+
+        ## Extract the mean and melt
+        mean_vars <- grep("mean", colnames(df), value = TRUE)
+        mean_df <- df[, c("t", "data_type", "obs", mean_vars)]
+        mean_df_melt <- reshape2::melt(mean_df,
+                                       id.vars = c("t", "data_type",
+                                                   "obs"),
+                                       value.name = "mean")
+        mean_df_melt$state <- gsub("_mean", "", mean_df_melt$variable)
+        ## Extract the variance and melt
+        if(CI){
+            var_vars <- grep("var", colnames(df), value = TRUE)
+            var_df <- df[, c("t", "data_type", "obs", var_vars)]
+            var_df_melt <- reshape2::melt(var_df,
+                                           id.vars = c("t", "data_type",
+                                                       "obs"),
+                                           value.name = "var")
+            var_df_melt$state <- gsub("_var", "", var_df_melt$variable)
+            df <- mean_df_melt
+            df$var <- var_df_melt$var
+            df <- df[, var_order]
+        } else{
+            df <- mean_df_melt[, var_order]
+        }
+        
+
+    } else if(plot_type == "loglinear"){
+
+    } else if(plot_type == "ternary"){
+
+    }
+
+
+    df <- df[, var_order]
+    return(df)
+    
+
+}
+
+
+
+#' Format observation data frame for plotting function
+#'
+#' @param obs data frame with t, S, I, and R columns
+#' @param plot_type "state" for regular SIR vs. t (faceted), "loglinear" for loglinear, and "ternary" for ternary
+#' @param CI logical.  Default is FALSE.  Should we plot confidence intervals?
+#' @return data frame with columns "t", "obs", "state" (one of "S", "I", or "R"), "mean", and optionally "var",  along with "data_type"
+format_obs <- function(obs, plot_type, CI){
+    if(plot_type == "state"){
+        var_order <- c("t", "obs", "state", "mean")
+        if(CI){
+            var_order <- c(var_order, "var", "data_type")
+        } else{
+            var_order <- c(var_order, "data_type")
+        }
+
+        df <- reshape2::melt(obs, id.vars = c("t"))
+        colnames(df) <- c("t", "state", "obs")
+        df$mean <- NA
+        if(CI){
+            df$var <- NA
+        }
+        df$data_type <- 0
+    } else if(plot_type == "loglinear"){
+
+    } else if(plot_type == "ternary"){
+
+    }
+
+    df <- df[, var_order]
+
+
+    return(df)
+    
+
 }
 
 #' Plot the ggplot estimates for the regular states
@@ -69,7 +170,7 @@ plot_ests.state <- function(df, pretty = TRUE){
         ggplot2::facet_wrap(~state, nrow = 3) +
         ggplot2:: geom_point(ggplot2::aes(y = obs,
                                           col = data_type),
-                             col = "black", size = 2)
+                             col = "black", size = 1)
     if("var" %in% colnames(df)){
         g <- g +
             ggplot2::geom_ribbon(
@@ -168,11 +269,32 @@ my_theme <- function(){
                                                          size = 16),
                      legend.key.size = ggplot2::unit(3, "line"),
                      plot.subtitle = ggplot2::element_text(size=16,
-                                                           family = "Palatino")
+                                                           family = "Palatino"),
+                     strip.text = ggplot2::element_text(size = 16,
+                                                        family = "Palatino")
                  ) +
-            theme(legend.position = "bottom")
+            ggplot2::theme(legend.position = "bottom") 
+      
 }
 
+
+#' Turn raw estimates to percent of N
+#'
+#' @param df with columns t, S, I, and R
+#' @param N total number of individuals
+#' @return transformed df
+df_to_pct <- function(df, N){
+    mean_vars <- grep("mean", colnames(df), value = TRUE)
+    mean_vars <- unique(c(mean_vars,
+                          colnames(df)[which(colnames(df) %in% c("S", "I", "R"))]
+                          ))
+    var_vars <- grep("var", colnames(df), value = TRUE)
+    df[, mean_vars] <- df[, mean_vars] * 100 / N
+    df[, var_vars] <- df[, var_vars] * (100 / N)^2
+
+    return(df)
+
+}
 
 #' Plot the mean and variance of simulations
 #'
