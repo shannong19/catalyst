@@ -20,7 +20,8 @@ plot_ests <- function(obs, ests, plot_type = "state",
                       CI_lab = NULL,
                       data_type = "Type",
                       pretty = TRUE,
-                      model_names = c("Observed", "Model 1", "Model 2")
+                      model_names = c("Observed", "Model 1", "Model 2"),
+                      subtitle = ""
                       ){
 
     ## format obs
@@ -30,10 +31,28 @@ plot_ests <- function(obs, ests, plot_type = "state",
 
     if(plot_type == "state"){
         g <- plot_ests.state(df)
+        g <- g + ggplot2::labs(x = xlab, y = ylab,
+                               title = title,
+                               subtitle = subtitle) +
+            ggplot2::scale_colour_manual(name = data_type,
+                                         labels = model_names,
+                                         values = model_cols) +
+            ggplot2::scale_linetype_discrete(name = data_type,
+                                             labels = model_names,) +
+            ggplot2::scale_fill_manual(name = data_type,
+                                       labels = model_names,
+                                       values = model_cols)
     } else if(plot_type == "loglinear"){
         g <- plot_ests.loglinear(df)
     } else if(plot_type == "ternary"){
         g <- plot_ests.ternary(df)
+        g <- g +  ggplot2::labs(
+                               title = title,
+                               subtitle = subtitle) +
+            ggplot2::scale_colour_manual(name = data_type,
+                                         labels = model_names,
+                                         values = model_cols) 
+            
     } else{
         stop("Select one of 'state', 'loglinear', or ternary'")
     }
@@ -44,16 +63,7 @@ plot_ests <- function(obs, ests, plot_type = "state",
         title <-  paste(title, "with", CI_lab)
     }
 
-    g <- g + ggplot2::labs(x = xlab, y = ylab,
-                  title = title) +
-        ggplot2::scale_colour_manual(name = data_type,
-                                       labels = model_names,
-                                       values = model_cols) +
-        ggplot2::scale_linetype_discrete(name = data_type,
-                                       labels = model_names,) +
-        ggplot2::scale_fill_manual(name = data_type,
-                                     labels = model_names,
-                                     values = model_cols)
+  
     print(g)
         
     return(g)
@@ -64,62 +74,97 @@ plot_ests <- function(obs, ests, plot_type = "state",
 #' @param ests data frame with t, S_mean, I_mean, and R_mean columns along with est_type, and optionally S_var, I_var, R_var (as percents out of total population N) and data_type
 #' @param plot_type "state" for regular SIR vs. t (faceted), "loglinear" for loglinear, and "ternary" for ternary
 #' @param CI logical.  Default is FALSE.  Should we plot confidence intervals?
-#' @return data frame with columns "t", "obs", "state" (one of "S", "I", or "R"), "mean", and optionally "var",  along with "data_type"
-format_ests <- function(ests, plot_type, CI){
+#' @return data frame with columns "t", "obs", "state" (one of "S", "I", or "R"), "mean", and optionally "var",  along with "data_type" if plot_type = "state"
+#' data frame with columns t, S, I, R, and data_type if plot_type = "ternary"
+format_ests <- function(ests, plot_type, CI = NULL){
 
     if(plot_type == "state"){
-        var_order <- c("t", "obs", "state", "mean")
-        if(CI){
-            var_order <- c(var_order, "var", "data_type")
-        } else{
-            var_order <- c(var_order, "data_type")
-        }
-
-
-        df <- ests
-
-        df$obs <- NA
-
-        df$data_type <- factor(df$data_type,
-                               labels = 1:length(unique(df$data_type)))
-
-        ## Extract the mean and melt
-        mean_vars <- grep("mean", colnames(df), value = TRUE)
-        mean_df <- df[, c("t", "data_type", "obs", mean_vars)]
-        mean_df_melt <- reshape2::melt(mean_df,
-                                       id.vars = c("t", "data_type",
-                                                   "obs"),
-                                       value.name = "mean")
-        mean_df_melt$state <- gsub("_mean", "", mean_df_melt$variable)
-        ## Extract the variance and melt
-        if(CI){
-            var_vars <- grep("var", colnames(df), value = TRUE)
-            var_df <- df[, c("t", "data_type", "obs", var_vars)]
-            var_df_melt <- reshape2::melt(var_df,
-                                           id.vars = c("t", "data_type",
-                                                       "obs"),
-                                           value.name = "var")
-            var_df_melt$state <- gsub("_var", "", var_df_melt$variable)
-            df <- mean_df_melt
-            df$var <- var_df_melt$var
-            df <- df[, var_order]
-        } else{
-            df <- mean_df_melt[, var_order]
-        }
-        
+        df <- format_ests.reg(ests, CI)
 
     } else if(plot_type == "loglinear"){
+        
 
     } else if(plot_type == "ternary"){
-
+        df <- format_ests.tern(ests, CI)
     }
 
 
-    df <- df[, var_order]
+
     return(df)
     
 
 }
+
+
+#' Format observation data frame for regular plotting function
+#'
+#' @param ests data frame with t, S_mean, I_mean, and R_mean columns along with est_type, and optionally S_var, I_var, R_var (as percents out of total population N) and data_type
+#' @param plot_type "state" for regular SIR vs. t (faceted), "loglinear" for loglinear, and "ternary" for ternary
+#' @param CI logical.  Default is FALSE.  Should we plot confidence intervals?
+#' @return data frame with columns "t", "obs", "state" (one of "S", "I", or "R"), "mean", and optionally "var",  along with "data_type" if plot_type = "state"
+format_ests.reg <- function(ests, CI = FALSE){
+    var_order <- c("t", "obs", "state", "mean")
+    if(CI){
+        var_order <- c(var_order, "var", "data_type")
+    } else{
+        var_order <- c(var_order, "data_type")
+    }
+    df <- ests
+    df$obs <- NA
+    df$data_type <- as.numeric(factor(df$data_type,
+                           labels = 1:length(unique(df$data_type))))
+
+    ## Extract the mean and melt
+    mean_vars <- grep("mean", colnames(df), value = TRUE)
+    mean_df <- df[, c("t", "data_type", "obs", mean_vars)]
+    mean_df_melt <- reshape2::melt(mean_df,
+                                   id.vars = c("t", "data_type",
+                                               "obs"),
+                                   value.name = "mean")
+    mean_df_melt$state <- gsub("_mean", "", mean_df_melt$variable)
+    ## Extract the variance and melt
+    if(CI){
+        var_vars <- grep("var", colnames(df), value = TRUE)
+        var_df <- df[, c("t", "data_type", "obs", var_vars)]
+        var_df_melt <- reshape2::melt(var_df,
+                                      id.vars = c("t", "data_type",
+                                                  "obs"),
+                                      value.name = "var")
+        var_df_melt$state <- gsub("_var", "", var_df_melt$variable)
+        df <- mean_df_melt
+        df$var <- var_df_melt$var
+        df <- df[, var_order]
+    } else{
+        df <- mean_df_melt[, var_order]
+    }
+    
+    df <- df[, var_order]
+    return(df)
+
+}
+
+
+#' Format observation data frame for regular plotting function
+#'
+#' @param ests data frame with t, S_mean, I_mean, and R_mean columns along with est_type, and optionally S_var, I_var, R_var (as percents out of total population N) and data_type
+#' @param plot_type "state" for regular SIR vs. t (faceted), "loglinear" for loglinear, and "ternary" for ternary
+#' @param CI logical.  Default is FALSE.  Should we plot confidence intervals?
+#' @return data frame with columns t, S, I, R, and data_type if plot_type = "ternary"
+format_ests.tern <- function(ests, CI = FALSE){
+    var_order <- c("t", "S_mean", "I_mean", "R_mean")
+    if(CI){
+        var_order <- c(var_order, "S_var", "I_var", "R_var", "data_type")
+    } else{
+        var_order <- c(var_order, "data_type")
+    }
+    df <- ests
+    df$data_type <- as.numeric(factor(df$est_type,
+                           labels = 1:length(unique(df$est_type))))
+    df <- df[, var_order]
+    return(df)
+
+}
+
 
 
 
@@ -145,13 +190,31 @@ format_obs <- function(obs, plot_type, CI){
             df$var <- NA
         }
         df$data_type <- 0
+        df <- df[, var_order]
     } else if(plot_type == "loglinear"){
+       
+        
 
     } else if(plot_type == "ternary"){
+        df <- obs
+        df <- dplyr::rename(df, S_mean = S, I_mean = I, R_mean = R)
+        df$data_type <- 0
+        var_order <- c("t", "S_mean", "I_mean", "R_mean")
+        if(CI){
+            var_order <- c(var_order, "S_var", "I_var", "R_var", "data_type")
+            df$S_var <- 0
+            df$I_var <- 0
+            df$R_var <- 0
+        } else{
+            var_order <- c(var_order, "data_type")
+        }
+        df$data_type <- 0
+        df <- df[, var_order]
 
     }
 
-    df <- df[, var_order]
+
+  
 
 
     return(df)
@@ -167,10 +230,8 @@ format_obs <- function(obs, plot_type, CI){
 plot_ests.state <- function(df, pretty = TRUE){
     g <- ggplot2::ggplot(data = df,
                          ggplot2::aes(x= t, group = data_type)) +
-        ggplot2::facet_wrap(~state, nrow = 3) +
-        ggplot2:: geom_point(ggplot2::aes(y = obs,
-                                          col = data_type),
-                             col = "black", size = 1)
+        ggplot2::facet_wrap(~state, nrow = 3) 
+      
     if("var" %in% colnames(df)){
         g <- g +
             ggplot2::geom_ribbon(
@@ -181,8 +242,58 @@ plot_ests.state <- function(df, pretty = TRUE){
         
     }
     g <- g + ggplot2::geom_line(ggplot2::aes(y = mean,
-                                             col = data_type,
-                                             linetype = data_type))
+                                             col = data_type),
+                                             linetype = 1, size = 2) +
+        ggplot2:: geom_point(ggplot2::aes(y = obs,
+                                          col = data_type),
+                             col = "black", size = 2)
+
+    return(g)
+    
+        
+}
+
+
+#' Plot the ggplot estimates for the states as a ternary plot
+#' 
+#' @param df data frame with columns "t", "S_mean", "I_mean", "R_mean" and "data_type"
+#' @param pretty logical.  Default is TRUE
+#' @return ggplot
+plot_ests.ternary <- function(df, pretty = TRUE, n_obs = 10){
+
+    df$id <- ifelse(df$t %% n_obs == 0, df$t / n_obs, 0)
+    pal <- c("black", RColorBrewer::brewer.pal(n = max(df$id), "Paired"))
+    g <- ggtern::ggtern()
+    g <- g + ggplot2::geom_path(data = df,
+                                ggtern::aes(S_mean, I_mean, R_mean, group = factor(data_type),
+                                            color = factor(data_type)), size = 2) +
+        ggplot2::geom_point(data = df,
+                            ggtern::aes(S_mean, I_mean, R_mean,
+                                        fill = factor(id)),  shape = 21, size = 2)
+
+    g <-  g +  ggtern::theme_hideticks() + ggtern::theme_showarrows() + 
+    ggtern::theme(tern.axis.text = ggplot2::element_text(size = 30,
+                                        family = "Palatino"),
+          text = ggplot2::element_text(size = 30,
+                                       family = "Palatino"),
+          legend.position = "bottom") +
+    ggtern::Tarrowlab("I") +
+    ggtern::Larrowlab("S") +
+    ggtern::Rarrowlab("R") +
+    ggplot2::scale_fill_manual(name = "Time",
+                      labels = c("Day",
+                                 paste("Day",
+                                       n_obs * (1:max(df$id)) + min(df$t) - 1)
+                                 ),
+                      values = pal) +
+    ggplot2::labs(L = "", T = "", R = "")
+    print(g)
+      
+    if("var" %in% colnames(df)){
+        stop("working on it")
+        
+    }
+ 
 
     return(g)
     

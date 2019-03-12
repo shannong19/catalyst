@@ -199,7 +199,7 @@ combine_ests <- function(df_list, N, CI = FALSE){
     L <- length(df_list)
     new_df_list <- vector(mode = "list", length = L)
     data_type <- df_list[[1]]$data_type[1]
-    unique_times <- sort(unique(do.call('c', sapply(df_list, function(df) df$t))))
+    unique_times <- sort(unique(do.call('c', lapply(df_list, function(df) df$t))))
     out_df <- data.frame(t = unique_times, S_mean = 0, I_mean= 0, R_mean= 0)
     for(ii in 1:L){
         new_df <- data.frame(t = unique_times)
@@ -212,7 +212,7 @@ combine_ests <- function(df_list, N, CI = FALSE){
         new_df$R_mean <- ifelse(new_df$t > T, max_R, new_df$R_mean)
         out_df$I_mean <- new_df$I_mean + out_df$I_mean
         out_df$R_mean <- new_df$R_mean + out_df$R_mean
-
+        
     }
     out_df$S_mean <- N - out_df$I_mean - out_df$R_mean
     out_df$data_type <- data_type

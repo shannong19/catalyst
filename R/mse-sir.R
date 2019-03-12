@@ -22,7 +22,7 @@ sse_sir <- function(obs, exp){
 #' @return sum of squared errors and number of obsrvations used to compute it
 #' ##TODO: put in c++
 sse_sir.df <- function(obs, exp){
-    colnames(exp) <- c("t", "S_exp", "I_exp", "R_exp")
+    colnames(exp)[1:4] <- c("t", "S_exp", "I_exp", "R_exp")
     df_join <- plyr::join(obs, exp, by = "t")
     sse_S <- sum((df_join$S  - df_join$S_exp)^2, na.rm = TRUE)
     sse_I <- sum((df_join$I  - df_join$I_exp)^2, na.rm = TRUE)

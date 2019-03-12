@@ -174,3 +174,73 @@ test_that("format_obs", {
     expect_true(all(is.na(out$obs)))
 
 })
+
+
+test_that("ternary plots", {
+    t <- rep(1:100, 1)
+    S <- 3 * t
+    I <- log(t)
+    R <- 2 + t
+    df1 <- data.frame(t = t, S = S, I = I, R = R)
+
+    plot_type <- "ternary"
+    CI <- TRUE
+
+    out <- format_obs(df1, plot_type = plot_type, CI = CI)
+    expect_true(ncol(out) == 8)
+    ##
+    t <- rep(1:100, 1)
+    S_mean <- 3 * t
+    I_mean <- log(t)
+    R_mean <- 2 + t
+    S_var <- 1
+    I_var <- 4
+    R_var <- 10
+    df2 <- data.frame(t = t, S_mean = S_mean,
+                      I_mean = I_mean,
+                      R_mean = R_mean,
+                      S_var = S_var,
+                      I_var = I_var,
+                      R_var = R_var,
+                      est_type = "cat")
+    out <- format_ests(df2, plot_type = plot_type, CI = CI)
+    expect_true(ncol(out) == 8)
+    ##
+    
+
+})
+
+test_that("plot ternary", {
+    CI <- FALSE
+    plot_type <- "ternary"
+    
+    t <- rep(1:100, 1)
+    S <- 3 * t
+    I <- log(t)
+    R <- 205 - S_mean - I_mean
+    obs <- data.frame(t = t, S = S, I = I, R = R)
+
+    t <- rep(1:100, 1)
+    S_mean <- 3 * t + 100
+    I_mean <- log(t) * 1.4
+    R_mean <- 200 - S_mean - I_mean
+    S_var <- 1
+    I_var <- 4
+    R_var <- 10
+    ests <- data.frame(t = t, S_mean = S_mean,
+                       I_mean = I_mean,
+                       R_mean = R_mean,
+                       S_var = S_var,
+                       I_var = I_var,
+                       R_var = R_var,
+                       est_type = "cat")
+    obs_df <- format_obs(obs, plot_type, CI)
+    ests_df <- format_ests(ests, plot_type, CI)
+    df <- rbind(obs_df, ests_df)
+
+    n_obs <- 10
+
+    plot_ests.ternary(df, n_obs = 20)
+
+    
+})

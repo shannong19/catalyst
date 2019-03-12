@@ -11,10 +11,13 @@ Encoding: UTF-8
 LazyData: true
 Imports: 
     Rcpp (>= 1.0.0),
-    ggplot2
+    ggplot2,
+    plyr
 LinkingTo: Rcpp
 Suggests: 
     testthat,
     reshape2,
     latex2exp,
-    plyr
+    ggtern,
+    dplyr,
+    RColorBrewer
