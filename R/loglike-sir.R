@@ -49,7 +49,7 @@ loglike_sir <- function(par, T, suff_stat, suff_stat_type = "U",
 #' @param par c("beta", "gamma")
 #' @param T number of steps 0:(T-1) inclusive
 #' @param U  U a 3xN matrix with (A0, SMax, IMax) 
-#' @param suff_stat_type character either "U" or "A" default is U
+#' @param suff_stat_type character either "U" or "X" default is U
 #' @param fxn function either "KM" for Kermack and McKendrick prob function or "RF" for Reed-Frost prob
 #' @param neg_loglike logical.  Default is TRUE.  Should we return the negative loglike?
 #' @param use_exp_X logical.  Default is FALSE.  Should we use expected values of X for the prob function or the data?
@@ -74,6 +74,7 @@ loglike_sir.U <- function(par, T, U, prob_fxn = "KM",
     } else{
         X <- UtoX_SIR(U, T)
     }
+
     N <- sum(X[1,])
     pt <- fxn(par, X, inf_nbrs, N)
     ## Calc loglike for each agent
@@ -152,5 +153,69 @@ loglike_sir.X <- function(par, T, suff_stat, prob_fxn,
     loglike <- loglike_SIR_CM(T, pt, par[2], suff_stat, N)
 
     return(loglike)
+
+}
+
+#' Split U suff stat by time
+#'
+#' @param U a 3xN matrix with (A0, SMax, IMax)
+#' @param tmin minimum time of last day prior to infection (inclusive).  Default is 0
+#' @param tmax maximum time of last day prior to infection (inclusive).
+#' @return subset of U such that t_min <= SMax <= t_max
+split_U <- function(U, tmin = 0, tmax){
+
+    ## either initially susceptible and last day infected between tmin and tmax OR
+    ## initially infected and last time infected is minimum tmin
+    inds <- which((U[1,] == 0 & tmin <= U[2, ] & U[2, ] <= tmax) |
+                  U[1, ] == 1 & tmin <= U[3,])
+    new_U <- U[, inds]
+    new_U[1, ] <- ifelse(new_U[2,] <= tmin, 1, new_U[1,])
+    new_U[2, ] <- ifelse(new_U[2,] <= tmin, tmax - tmin, new_U[2,] - tmin)
+    new_U[3, ] <- ifelse(new_U[3,] <= tmin, tmax - tmin, new_U[3,] - tmin)
+    return(new_U)
+}
+
+
+
+#' Update U after subsetting by time
+#'
+#' @param A0 initial states at time 0
+#' @param SMax maximum time before infection (between tmin and tmax)
+#' @param tmin
+udpate_A0 <- function(A0, Smax, tmin, tmax){
+    
+
+}
+                      
+
+
+#' Combine estimate of data frames perhaps at different times
+#'
+#' @param df_list list of estimate data frames
+#' @param N total number of agents
+#' @param CI whether we should include variance
+#' @return combined data frame for all unique time steps
+combine_ests <- function(df_list, N, CI = FALSE){
+    L <- length(df_list)
+    new_df_list <- vector(mode = "list", length = L)
+    data_type <- df_list[[1]]$data_type[1]
+    unique_times <- sort(unique(do.call('c', sapply(df_list, function(df) df$t))))
+    out_df <- data.frame(t = unique_times, S_mean = 0, I_mean= 0, R_mean= 0)
+    for(ii in 1:L){
+        new_df <- data.frame(t = unique_times)
+        new_df <- plyr::join(new_df, df_list[[ii]][, c("t", "S_mean", "I_mean", "R_mean")], by = "t")
+        new_df$S_mean <- ifelse(is.na(new_df$S_mean), 0, new_df$S_mean)
+        new_df$I_mean <- ifelse(is.na(new_df$I_mean), 0, new_df$I_mean)
+        new_df$R_mean <- ifelse(is.na(new_df$R_mean), 0, new_df$R_mean)
+        T <- max(df_list[[ii]]$t, na.rm = TRUE)
+        max_R <- max(new_df$R_mean, na.rm = TRUE)
+        new_df$R_mean <- ifelse(new_df$t > T, max_R, new_df$R_mean)
+        out_df$I_mean <- new_df$I_mean + out_df$I_mean
+        out_df$R_mean <- new_df$R_mean + out_df$R_mean
+
+    }
+    out_df$S_mean <- N - out_df$I_mean - out_df$R_mean
+    out_df$data_type <- data_type
+    return(out_df)
 
 }
