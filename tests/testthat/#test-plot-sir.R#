@@ -310,9 +310,9 @@ test_that("loglinear plot", {
     ests_df <- format_ests(ests, plot_type, CI)
     df <- rbind(obs_df, ests_df)
 
-    n_obs <- 10
+    plot_ests.loglinear(df)
 
-    plot_ests.loglinear(df, n_obs = 20)
+    plot_ests(obs, ests, plot_type = "loglinear")
 
 
 
