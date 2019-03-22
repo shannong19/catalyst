@@ -201,3 +201,38 @@ test_that("loglike_sir.X and friends", {
 
     
 })
+
+
+test_that("loglike_sir.UX and friends", {
+    ## This is for when X is total and U is partial
+    ## e.g. different agents in U are associated with different parameters, but still encounter the total number of infections in X
+
+    par <- c(.2, .7)
+    T <- 3
+    U <- matrix(c(0, 0, 1, 0,
+                  0, 1, 2, 2,
+                  1, 2, 2, 2), byrow = TRUE, nrow = 3)
+    X <- UtoX_SIR(U, T)
+    x <- X[1,]
+    Usub <- U[, 1:3]
+    out <- loglike_sir.UX(par = par, T = T,
+                          X = X, U= Usub,
+                          prob_fxn = "KM",
+                          use_exp_X = FALSE,
+                          x0 = x,
+                          inf_nbrs = NULL)
+    expect_true(all(out < 0))
+
+    out <- loglike_sir(par = par, T = T,
+                       suff_stat = NULL, suff_stat_type = "UX",
+                       X = X, Usub= Usub,
+                       prob_fxn = "KM",
+                       neg_loglike = TRUE,
+                       use_exp_X = FALSE,
+                       x0 = x,
+                       inf_nbrs = NULL)
+     expect_true(all(out > 0))
+
+    
+
+})

@@ -15,8 +15,8 @@
 #' @return list with final model, the variance weights (if applicable), and plot (if applicable)
 r0_loglinear_sir <- function(obs,
                              CI_level = .95,
-                             title = "Observations and Estimate",
-                             subtitle = "",
+                             title = "Log-linear regression line",
+                             subtitle = "Measles in Hagelloch, Germany 1861",
                              weighted_obs = TRUE,
                              do_plot = TRUE){
 
@@ -43,13 +43,35 @@ r0_loglinear_sir <- function(obs,
                   weights = 1 / new_df$var)
 
     if(do_plot){
+        est_df <- as.data.frame(pi)
+        est_df$x <- new_df$x
+
+        g <- ggplot2::ggplot() +
+            ggplot2::geom_line(data = est_df,
+                               ggplot2::aes(x = x, y = fit), col = "blue",
+                               size = 2) +
+            ggplot2::geom_ribbon(data = est_df,
+                                 ggplot2::aes(x = x, ymin = lwr, max = upr),
+                                 col = NA, fill = "blue", alpha = .3) +
+            ggplot2::geom_point(data = df,
+                                ggplot2::aes(x = x, y = y), size = 2)
+
+
+        g <- g + my_theme() +
+            ggplot2::labs(x = latex2exp::TeX("$R_t/N$"),
+                          y = latex2exp::TeX("$-\\log (S_t / S_0 )$"),
+                          title = title,
+                          subtitle = subtitle)
+        print(g)
+                               
+        
 
     } else{
         g <- NA
     }
     return(list(final_model = out_mod,
                 CI_level = CI_level,
-                g = g)
+                g = g))
 
     
     
