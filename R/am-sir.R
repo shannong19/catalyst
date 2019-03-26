@@ -155,7 +155,7 @@ get_prob_inf <- function(par1_vec, inf_inds,
                          nbr_list = NULL,
                          X_theor = NULL,
                          prob_fxn = "KM"){
-    
+
     N <- length(par1_vec)
     if(!is.null(X_theor)){ # Use expected X values
         n_inf_nbrs <- X_theor[2]
@@ -163,7 +163,7 @@ get_prob_inf <- function(par1_vec, inf_inds,
         nbr_inf_inds <- inf_inds
         n_inf_nbrs <- length(nbr_inf_inds)
     } else {
-        n_inf_nbrs <- get_n_nbr_inf(nbr_list, inf_inds)
+            n_inf_nbrs <- get_n_nbr_inf(nbr_list, inf_inds)
     }
     
     if(prob_fxn == "KM"){

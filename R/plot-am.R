@@ -1,0 +1,13 @@
+## SKG
+## March 26, 2019
+## Plot object from am-sir.R
+
+
+#' Plot the output of am_sir()
+#'
+#' @param sim output from am_sir()
+#' @return ggplot
+am_plot_mean_var <- function(sims){
+
+
+}
