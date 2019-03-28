@@ -52,6 +52,21 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// sirLoopGroups
+NumericMatrix sirLoopGroups(NumericVector x, NumericVector beta_vec, NumericVector gamma_vec, int T, int prob_type);
+RcppExport SEXP _Catalyst_sirLoopGroups(SEXP xSEXP, SEXP beta_vecSEXP, SEXP gamma_vecSEXP, SEXP TSEXP, SEXP prob_typeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type beta_vec(beta_vecSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type gamma_vec(gamma_vecSEXP);
+    Rcpp::traits::input_parameter< int >::type T(TSEXP);
+    Rcpp::traits::input_parameter< int >::type prob_type(prob_typeSEXP);
+    rcpp_result_gen = Rcpp::wrap(sirLoopGroups(x, beta_vec, gamma_vec, T, prob_type));
+    return rcpp_result_gen;
+END_RCPP
+}
 // sirLoop
 NumericVector sirLoop(NumericVector x, double beta, double gamma, int T, int prob_type);
 RcppExport SEXP _Catalyst_sirLoop(SEXP xSEXP, SEXP betaSEXP, SEXP gammaSEXP, SEXP TSEXP, SEXP prob_typeSEXP) {
@@ -170,6 +185,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_Catalyst_AMTime_SIR", (DL_FUNC) &_Catalyst_AMTime_SIR, 3},
     {"_Catalyst_get_n_nbr_inf", (DL_FUNC) &_Catalyst_get_n_nbr_inf, 2},
     {"_Catalyst_rcpp_hello", (DL_FUNC) &_Catalyst_rcpp_hello, 0},
+    {"_Catalyst_sirLoopGroups", (DL_FUNC) &_Catalyst_sirLoopGroups, 5},
     {"_Catalyst_sirLoop", (DL_FUNC) &_Catalyst_sirLoop, 5},
     {"_Catalyst_initializeNeighbors", (DL_FUNC) &_Catalyst_initializeNeighbors, 1},
     {"_Catalyst_loglike_SIR_CM", (DL_FUNC) &_Catalyst_loglike_SIR_CM, 5},

@@ -215,15 +215,15 @@ test_that("loglike_sir.UX and friends", {
     X <- UtoX_SIR(U, T)
     x <- X[1,]
     Usub <- U[, 1:3]
-    out <- loglike_sir.UX(par = par, T = T,
+    out2 <- loglike_sir.UX(par = par, T = T,
                           X = X, U= Usub,
                           prob_fxn = "KM",
                           use_exp_X = FALSE,
                           x0 = x,
                           inf_nbrs = NULL)
-    expect_true(all(out < 0))
+    expect_true(all(out2 < 0))
 
-    out <- loglike_sir(par = par, T = T,
+    out2 <- loglike_sir(par = par, T = T,
                        suff_stat = NULL, suff_stat_type = "UX",
                        X = X, Usub= Usub,
                        prob_fxn = "KM",
@@ -231,8 +231,62 @@ test_that("loglike_sir.UX and friends", {
                        use_exp_X = FALSE,
                        x0 = x,
                        inf_nbrs = NULL)
-     expect_true(all(out > 0))
+    expect_true(all(out2 > 0))
+
+    ########################################
+### Trying with multiple groups
+###################################3
+
+    G <- 2
+    par <- c(.2, 1, 0, .7)
+    G_id <- c(1, 1, 2, 1)
+    T <- 3
+    U <- matrix(c(0, 0, 1, 0,
+                  0, 1, 2, 2,
+                  1, 2, 2, 2), byrow = TRUE, nrow = 3)
+    X <- UtoX_SIR(U, T)
+    x <- X[1,]
+    Usub <- U
+    out <- loglike_sir.UX(par = par, T = T,
+                          X = X, U= U,
+                          prob_fxn = "KM",
+                          use_exp_X = TRUE,
+                          x0 = x,
+                          inf_nbrs = NULL,
+                          G_id = G_id,
+                          G = G)
 
     
 
 })
+
+
+test_that("sir_init_groups", {
+    A0 <- c(0, 0, 0, 1)
+    G_id <- c(1, 2, 2, 1)
+    G <- 2
+    out <- sir_init_groups(A0, G_id, G)
+    out
+    expect_equal(out, c(1, 2, 1, 0, 0, 0))
+
+    })
+
+
+
+test_that("aggregate_X", {
+    X <- matrix(c(9, 7, 3, 1,
+                  1, 2, 5, 3,
+                  0, 1, 2, 6), ncol = 3)
+    out <- aggregate_X(X)
+    expect_equal(sum(out - X), 0)
+    ## Many groups
+    X <- matrix(c(9, 7, 3, 1,
+                  1, 2, 5, 3,
+                  0, 1, 2, 6,
+                  9, 7, 3, 1,
+                  1, 2, 5, 3,
+                  0, 1, 2, 6), ncol = 6)
+    out <- aggregate_X(X)
+    expect_equal(dim(out), c(4, 3))
+    
+    })

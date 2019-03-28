@@ -17,6 +17,10 @@ rcpp_hello <- function() {
     .Call(`_Catalyst_rcpp_hello`)
 }
 
+sirLoopGroups <- function(x, beta_vec, gamma_vec, T, prob_type) {
+    .Call(`_Catalyst_sirLoopGroups`, x, beta_vec, gamma_vec, T, prob_type)
+}
+
 sirLoop <- function(x, beta, gamma, T, prob_type) {
     .Call(`_Catalyst_sirLoop`, x, beta, gamma, T, prob_type)
 }

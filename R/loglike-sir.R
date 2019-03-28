@@ -20,13 +20,17 @@
 #' @param inf_nbrs TBD
 #' @param X Tx3 matrix for use with loglike_sir.UX.  Default is NULL
 #' @param Usub 3xNstar matrix, a partial U, for use with loglike_sir.UX.  Default is NULL
+#' @param G_id group ID.  Default is NULL
+#' @param G total number of groups.  Default is 1
 #' @return scalar loglike
 loglike_sir <- function(par, T, suff_stat, suff_stat_type = "U",
                         prob_fxn = "KM", neg_loglike = TRUE,
                         use_exp_X = TRUE, x0 = NULL,
                         inf_nbrs = NULL,
                         X = NULL,
-                        Usub = NULL){
+                        Usub = NULL,
+                        G_id = NULL,
+                        G = 1){
    
     if(suff_stat_type == "U"){
         loglike <- loglike_sir.U(par, T, suff_stat, prob_fxn,
@@ -40,8 +44,10 @@ loglike_sir <- function(par, T, suff_stat, suff_stat_type = "U",
         loglike <- loglike_sir.UX(par, T,
                                   Usub, X,
                                   prob_fxn = prob_fxn,
-                                  use_exp_X = FALSE, x0 = X[1,],
-                                  inf_nbrs = NULL)
+                                  use_exp_X = use_exp_X, x0 = X[1,],
+                                  inf_nbrs = NULL,
+                                  G_id = G_id,
+                                  G = G)
         
     } else{
         stop("select a proper suff stat")
@@ -67,34 +73,48 @@ loglike_sir <- function(par, T, suff_stat, suff_stat_type = "U",
 #' @param use_exp_X logical.  Default is FALSE.  Should we use expected values of X for the prob function or the data?
 #' @param x0 c(S0, I0, R0) or NULL
 #' @param inf_nbrs TBD
+#' @param G_id group ID.  Default is NULL
+#' @param G total number of groups.  Default is 1
 #' @return scalar loglike
 loglike_sir.UX <- function(par, T,
                            U, X,
                            prob_fxn = "KM",
                            use_exp_X = FALSE, x0 = NULL,
-                           inf_nbrs = NULL){
+                           inf_nbrs = NULL,
+                           G_id = NULL,
+                           G = 1){
+    N <- sum(X[1,])
+    betas <- par[1:G]
+    gammas <- par[(G+1):(2 * G)]
+    beta_n <- group_to_agent_par(betas, G_id, ncol(U))
+    gamma_n <- group_to_agent_par(gammas, G_id, ncol(U))
     if(prob_fxn == "KM"){
-        fxn <- KM_prob
+        fxn <- KM_probG
+        prob_type <- 0
     } else if(prob_fxn == "RF"){
-        fxn <- RF_prob
+        fxn <- RF_probG
+        prob_type <- 1
     } else{
         stop("select a proper prob_fxn")
     }
     ##
     if(use_exp_X){
-        ## TODO
+        x0 <- sir_init_groups(U[1,], G_id, G, X)  ## WARNING:  Assumes size of U is N, otherwise will give weird estimates
+        X_group <- sirLoopGroups(x0,
+                                 betas, gammas,
+                                 T, prob_type)
+        X <- aggregate_X(X_group)
     } else{
         X <- X
     }
     ## Constraining the pars
-    par[1] <- ifelse(par[1] > 1, 1, par[1])
-    par[2] <- ifelse(par[2] <= 0, 1e-8, par[2])
+    beta_n <- ifelse(beta_n> 1, 1, beta_n)
+    gamma_n<- ifelse(gamma_n<= 0, 1e-8, gamma_n)
 
-    N <- sum(X[1,])
-    pt <- fxn(par, X, inf_nbrs, N)
+    pt <- fxn(beta_n, X, inf_nbrs, N)
     ## Calc loglike for each agent
     loglike <- sapply(1:ncol(U), function(ii){
-        loglike_agent_sir(pt, par[2], T, U[,ii])
+        loglike_agent_sir(pt[,ii], gamma_n[ii], T, U[,ii])
     })
     return(loglike)
 
@@ -174,7 +194,7 @@ loglike_agent_sir <- function(pt, gamma, T, Un){
 }
 
 
-#' Get loglike for SIR with U statistics
+#' Get loglike for SIR with X statistics
 #' 
 #' @param par c("beta", "gamma")
 #' @param T number of steps 0:(T-1) inclusive
@@ -277,3 +297,59 @@ combine_ests <- function(df_list, N, CI = FALSE){
     return(out_df)
 
 }
+
+
+#' Turn A0 into X matrix with G groups
+#'
+#' @param A0 vector of size N with initial states (0 is S, 1 is I, 2 is R)
+#' @param G_id vector of length N where the entry is the group ID, groups should be 1 to G
+#' @param G total number of groups
+#' @param total X
+#' @return a x0 vector where the first G entries are #S for each group, next G are I, and final G are R
+sir_init_groups <- function(A0, G_id, G, X){
+    if(is.null(G_id)){
+        return(X[1,])
+    }
+    x0 <- numeric(G * 3)
+    for(gg in unique(G_id)){
+        x0[gg] <-  length(which(A0 == 0 & G_id == gg))
+        x0[G + gg] <-  length(which(A0 == 1 & G_id == gg))
+        x0[2 * G + gg] <-  length(which(A0 == 2 & G_id == gg))
+    }
+    return(x0)
+
+
+}
+
+
+
+#' Turn a stratified X_group into X
+#'
+#' @param X_group matrix of size T x (3*G) where G is the number of groups, S1, \dots, SG, I1, \dots IG, R1, \dots, RG is the order
+#' @return Tx3 matrix where S = \sum_{g=1}^G Sg, and same for others
+aggregate_X <- function(X_group){
+    G <- ncol(X_group) / 3
+    S <- rowSums(X_group[, 1:G, drop = FALSE])
+    I <- rowSums(X_group[, (G+1):(2*G), drop = FALSE])
+    R <- rowSums(X_group[, (2*G+1):(3*G), drop = FALSE])
+    X <- cbind(S, I, R)
+    colnames(X) <- NULL
+    return(X)
+}
+
+
+#' Turn vector of size G into a vector of size N based on group assignments
+#'
+#' @param par vector of size G
+#' @param G_id vector of size N with entries 1 to G
+#' @param N total number of agents
+#' @return par_n vector of size N
+group_to_agent_par <- function(par, G_id, N){
+    if(is.null(G_id)){
+        par_n <- rep(par, N)
+    } else{
+        par_n <- par[G_id]
+    }
+    return(par_n)
+}
+    

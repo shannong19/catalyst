@@ -1,0 +1,8 @@
+context("testing probabilitiy functions")
+
+test_that("Group probabilities", {
+
+
+
+
+})
