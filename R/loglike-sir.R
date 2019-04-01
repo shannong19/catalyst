@@ -264,6 +264,44 @@ udpate_A0 <- function(A0, Smax, tmin, tmax){
     
 
 }
+
+
+#' Combine output from am_sir with different time ranges
+#'
+#' @param sims_X_list list of multiple "X" outputs from am_sir()
+#' @param N total number of agents
+#' @return a data frame where we add the corresponding states together
+combine_sims_X <- function(sims_X_list, N){
+    sims_X_list <- lapply(sims_X_list, function(df){
+        if(class(df) != "data.frame"){
+            df <- as.data.frame(df)
+        }
+        df
+    })
+    unique_times <- sort(unique(do.call('c', lapply(sims_X_list, function(df) df$t))))
+    unique_sims <- sort(unique(do.call('c', lapply(sims_X_list, function(df) df$ll))))
+    grid <- expand.grid(t = unique_times, ll = unique_sims)
+    joined_list <- lapply(sims_X_list, function(df){
+        new_X <- plyr::join(grid, df)
+        new_X$S <- ifelse(is.na(new_X$S), 0, new_X$S)
+        new_X$I <- ifelse(is.na(new_X$I), 0, new_X$I)
+        new_X$R <- ifelse(is.na(new_X$R), 0, new_X$R)
+        ## Now adjust the later T
+        T <- max(df$t, na.rm = TRUE)
+        last_R <- df$R[T]
+        last_I <- df$I[T]
+        last_S <- df$S[T]
+        new_X$R <- ifelse(new_X$t > T, last_R, new_X$R)
+        new_X$I <- ifelse(new_X$t > T, last_I, new_X$I)
+        new_X$S <- ifelse(new_X$t > T, last_S, new_X$S)
+        return(new_X[, c("S", "I", "R")])
+    })
+    X <- Reduce('+', joined_list)
+    df <- cbind(grid, X)
+    df$S <- N - df$I - df$R
+    return(df)
+    
+}
                       
 
 

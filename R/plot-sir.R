@@ -33,6 +33,8 @@ plot_ests <- function(obs, ests, plot_type = "state",
         title <-  paste(title, "with", CI_lab)
     }
 
+
+
     if(plot_type == "state"){
       
         g <- plot_ests.state(df)
@@ -43,7 +45,7 @@ plot_ests <- function(obs, ests, plot_type = "state",
                                          labels = model_names,
                                          values = model_cols) +
             ggplot2::scale_linetype_discrete(name = data_type,
-                                             labels = model_names,) +
+                                             labels = model_names) +
             ggplot2::scale_fill_manual(name = data_type,
                                        labels = model_names,
                                        values = model_cols)
@@ -126,6 +128,7 @@ format_ests.reg <- function(ests, CI = FALSE){
     }
     df <- ests
     df$obs <- NA
+
     df$data_type <- as.numeric(factor(df$data_type,
                            labels = 1:length(unique(df$data_type))))
 
@@ -391,7 +394,7 @@ plot_ests.ternary <- function(df, pretty = TRUE, n_obs = 10){
     ggtern::Tarrowlab("I") +
     ggtern::Larrowlab("S") +
     ggtern::Rarrowlab("R") +
-    ggplot2::scale_shape_manual(name = "Type", values = c(24, 21)) + 
+    ggplot2::scale_shape_manual(name = "Data", values = c(24, 21), labels = c("Est.", "Obs.")) + 
     ggplot2::scale_fill_manual(name = "Time",
                       labels = c("Day",
                                  paste("Day",
@@ -711,5 +714,37 @@ plot_mean_var.reg <- function(catalyst_sims, K = 3,
     
     print(g)
     return(g)
+
+}
+
+
+
+#' Format the 'X' output from am_sir so we can plot it
+#'
+#' @param sims_X data frame with columns t, ll, S, I, R, and model
+#' @return ests data frame with t, S_mean, I_mean, and R_mean columns along with data_type, and optionally S_var, I_var, R_var (as percents out of total population N)
+format_sims_X <- function(sims_X, CI = FALSE){
+    N <- 
+     if(CI){
+         out <- plyr::ddply(sims_X, .var = c("t", "model"), .fun = function(df){
+             out <- c(S_mean = mean(df$S), I_mean = mean(df$I), R_mean = mean(df$R),
+                      S_var = var(df$S), I_var = var(df$I), R_var = var(df$R))
+             return(out)
+
+         })
+         colnames <- c("t", "S_mean", "I_mean", "R_mean", "data_type",
+                       "S_var", "I_var", "R_var")
+
+    } else {
+        out <- plyr::ddply(sims_X, .var = c("t", "model"), .fun = function(df){
+            out <- c(S_mean = mean(df$S), I_mean = mean(df$I), R_mean = mean(df$R))
+            return(out)
+        })
+        colnames <- c("t", "S_mean", "I_mean", "R_mean", "data_type")     
+    }
+
+     out$data_type <- out$model
+     return(out[, colnames])
+                       
 
 }
