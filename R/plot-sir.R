@@ -10,6 +10,7 @@
 #' @param plot_type "state" for regular SIR vs. t (faceted), "loglinear" for loglinear, and "ternary" for ternary
 #' @param CI logical.  Default is FALSE.  Should we plot confidence intervals?
 #' @param model_cols color palette
+#' @param n_obs plot every n_obs in the  ternary plot
 #' @return a ggplot
 plot_ests <- function(obs, ests, plot_type = "state",
                       CI = FALSE,
@@ -21,7 +22,8 @@ plot_ests <- function(obs, ests, plot_type = "state",
                       data_type = "Type",
                       pretty = TRUE,
                       model_names = c("Observed", "Model 1", "Model 2"),
-                      subtitle = ""
+                      subtitle = "",
+                      n_obs = 10
                       ){
 
     ## format obs
@@ -68,7 +70,7 @@ plot_ests <- function(obs, ests, plot_type = "state",
                  
         
     } else if(plot_type == "ternary"){
-        g <- plot_ests.ternary(df)
+        g <- plot_ests.ternary(df, n_obs = n_obs)
         cols <- c(NA, model_cols[-1])
         g <- g +  ggplot2::labs(title = title,
                                subtitle = subtitle) +
@@ -368,6 +370,7 @@ plot_ests.loglinear <- function(df, pretty = TRUE){
 #' 
 #' @param df data frame with columns "t", "S_mean", "I_mean", "R_mean" and "data_type"
 #' @param pretty logical.  Default is TRUE
+#' @param number of dates to plot
 #' @return ggplot
 plot_ests.ternary <- function(df, pretty = TRUE, n_obs = 10){
 

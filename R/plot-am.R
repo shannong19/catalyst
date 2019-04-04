@@ -11,12 +11,16 @@
 #' @param subtitle subtitle to give ggplot
 #' @param obs data frame of observations with column names (t, S, I, R) .  Default is NULL, and so no observations are plotted
 #' @param plot_var logical.  Do we plot CI?  Default is TRUE
+#' @param labs model type labels.  Default is NULL
+#' @param color_guide_name  Default is "Model Avg."
 #' @return ggplot and the plotting df
 am_plot_mean_var <- function(X, obs = NULL,
                              cols = c("blue", "red", "yellow3"),
                              title = "Hagelloch AM Simulations",
                              subtitle = "",
-                             plot_var = TRUE){
+                             plot_var = TRUE,
+                             labs = NULL,
+                             color_guide_name = "Model Avg."){
     if(!("model"  %in% colnames(X))){
         X <- as.data.frame(X)
         X$model <- 1
@@ -24,7 +28,10 @@ am_plot_mean_var <- function(X, obs = NULL,
     } else{
         n_models <- length(unique(X$model))
     }
-    
+
+    if(is.null(labs)){
+        labs <- 1:length(cols)
+    }
     N <- X$S[1] + X$I[1] + X$R[1]
     Xm <- reshape2::melt(X, id.vars = c("t", "ll", "model"))
     ## Extract mean and variance plyr 4eva
@@ -38,7 +45,8 @@ am_plot_mean_var <- function(X, obs = NULL,
                          ggplot2::aes(x = t, y = mean / N * 100, group = factor(model),
                                       col = factor(model)),
                          size = 1) +
-        ggplot2::scale_color_manual(values = cols[1:n_models]) +
+        ggplot2::scale_color_manual(values = cols[1:n_models],
+                                    name = color_guide_name, labels = labs) +
         ggplot2::scale_fill_manual(values = cols[1:n_models],  guide = FALSE) +
         my_theme() +
         ggplot2::facet_wrap(~variable, nrow = 3)
