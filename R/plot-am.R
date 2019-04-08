@@ -78,3 +78,99 @@ am_plot_mean_var <- function(X, obs = NULL,
     return(list(g = g, plot_df = df))
 
 }
+
+
+#' Plot epidemic summary of SIR AM
+#'
+#' @param sims_list list of the "X" output from am_sir() function
+#' @param N number of total agents
+#' @return list with two ggplots and summarized, plottable df
+plot_epidemic_summary <- function(sims_list, N,
+                                  title,
+                                  subtitle){
+
+    df <- summarize_epidemic(sims_list, N)
+
+    ## Plot max t vs max I
+    g1 <- ggplot2::ggplot(data = df,
+                          ggplot2::aes(x = mean_max_I / N * 100,
+                                       y = mean_max_t)) +
+        ggplot2::geom_point(size = 2) + my_theme() +
+        ggplot2::geom_text(ggplot2::aes(label = model), nudge_x = -2 / N * 100,
+                           nudge_y = 2) +
+        ggplot2::labs(x = "Maximum % infectious over all days",
+             y = "Day of peak % infectious",
+             title = title,
+             subtitle = subtitle) +
+        ggplot2::geom_errorbar(ggplot2::aes(ymin = tmin,
+                                            ymax = tmax)) +
+        ggplot2::geom_errorbarh(ggplot2::aes(xmin = Imin,
+                                             xmax = Imax))
+    g1
+
+    ## Plot max total I vs max I
+    g2 <- ggplot2::ggplot(data = df,
+                          ggplot2::aes(x = mean_max_I / N * 100,
+                                       y = mean_sum_I / N * 100)) +
+        ggplot2::geom_point(size = 2) + my_theme() +
+        ggplot2::geom_text(ggplot2::aes(label = model), nudge_x = -2 / N * 100,
+                           nudge_y = 2) +
+        ggplot2::labs(x = "Maximum % infectious over all days",
+             y = "% of total infected over course of epidemic",
+             title = title,
+             subtitle = subtitle) +
+        ggplot2::geom_errorbar(ggplot2::aes(ymin = sumImin,
+                                            ymax = sumImax)) +
+        ggplot2::geom_errorbarh(ggplot2::aes(xmin = Imin,
+                                             xmax = Imax))
+
+    gridExtra::grid.arrange(g1, g2, nrow = 2)
+    return(list(g1 = g1, g2 = g2, df = df))
+
+    
+}
+
+#' Summarize list of AM simulations
+#' 
+#' @param sims_list list of the "X" output from am_sir() function
+#' @param N total number of agents
+#' @return summary data frame with columns mean_* and var_* for ("max_I", "sum_I", and "max_t") and 95% CIs for each of these vars around the mean
+summarize_epidemic <- function(sims_list, N){
+
+    X <- do.call('rbind', sims_list)
+    X$model <- X$mult
+    df <- X[, - which(colnames(X) == "mult")]
+
+    
+    ## Make into a function
+    sum_df <- plyr::ddply(df, .var = c("model", "ll"),
+                          .fun = function(df){
+                              c(max_I = max(df$I),
+                                sum_I = max(df$R),
+                                max_t = which.max(df$I))
+                          })
+    ave_sum_df <- plyr::ddply(sum_df, .var = c("model"),
+                              .fun = function(df){
+                                  c(mean_max_I = mean(df$max_I),
+                                    var_max_I = var(df$max_I),
+                                    mean_sum_I = mean(df$sum_I),
+                                    var_sum_I = var(df$sum_I),
+                                    mean_max_t = mean(df$max_t),
+                                    var_max_t = var(df$max_t))
+                              }) 
+    ave_sum_df$tmin <-  (ave_sum_df$mean_max_t -
+                         2 * sqrt(ave_sum_df$var_max_t))
+    ave_sum_df$tmax <-  (ave_sum_df$mean_max_t +
+                         2 * sqrt(ave_sum_df$var_max_t))
+    ave_sum_df$Imin <-  (ave_sum_df$mean_max_I / N * 100 -
+                         2 * sqrt(ave_sum_df$var_max_I) / N * 100)
+    ave_sum_df$Imax <-  (ave_sum_df$mean_max_I / N * 100 +
+                         2 * sqrt(ave_sum_df$var_max_I) / N * 100)
+    ave_sum_df$sumImin <-  (ave_sum_df$mean_sum_I / N * 100 -
+                            2 * sqrt(ave_sum_df$var_sum_I) / N * 100)
+    ave_sum_df$sumImax <-  (ave_sum_df$mean_sum_I / N * 100 +
+                            2 * sqrt(ave_sum_df$var_sum_I) / N * 100)
+    return(ave_sum_df)
+
+
+}
