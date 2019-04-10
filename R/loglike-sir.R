@@ -320,17 +320,32 @@ combine_ests <- function(df_list, N, CI = FALSE){
     for(ii in 1:L){
         new_df <- data.frame(t = unique_times)
         new_df <- plyr::join(new_df, df_list[[ii]][, c("t", "S_mean", "I_mean", "R_mean")], by = "t")
-        new_df$S_mean <- ifelse(is.na(new_df$S_mean), 0, new_df$S_mean)
-        new_df$I_mean <- ifelse(is.na(new_df$I_mean), 0, new_df$I_mean)
-        new_df$R_mean <- ifelse(is.na(new_df$R_mean), 0, new_df$R_mean)
-        T <- max(df_list[[ii]]$t, na.rm = TRUE)
-        max_R <- max(new_df$R_mean, na.rm = TRUE)
-        new_df$R_mean <- ifelse(new_df$t > T, max_R, new_df$R_mean)
-        out_df$I_mean <- new_df$I_mean + out_df$I_mean
-        out_df$R_mean <- new_df$R_mean + out_df$R_mean
+        Tmax <- max(df_list[[ii]]$t, na.rm = TRUE)
+        Tmin <- min(df_list[[ii]]$t, na.rm = TRUE)
+        if(Tmax < max(unique_times)){
+            new_df$S_mean <- ifelse(is.na(new_df$S_mean), new_df$S_mean[Tmax + 1], new_df$S_mean)
+            new_df$I_mean <- ifelse(is.na(new_df$I_mean), new_df$I_mean[Tmax + 1], new_df$I_mean)
+            new_df$R_mean <- ifelse(is.na(new_df$R_mean), new_df$R_mean[Tmax + 1], new_df$R_mean)
+        }
+        if(Tmin > min(unique_times)){
+            new_df$S_mean <- ifelse(is.na(new_df$S_mean), new_df$S_mean[Tmin + 1] +
+                                                          new_df$I_mean[Tmin + 1] +
+                                                          new_df$R_mean[Tmin + 1], new_df$S_mean)
+            new_df$I_mean <- ifelse(is.na(new_df$I_mean), 0, new_df$I_mean)
+            new_df$R_mean <- ifelse(is.na(new_df$R_mean), 0, new_df$R_mean)
+        }
+
+
+        out_df$S_mean <- out_df$S_mean + new_df$S_mean
+        out_df$I_mean <- out_df$I_mean + new_df$I_mean
+        out_df$R_mean <- out_df$R_mean + new_df$R_mean
+        ## max_R <- max(new_df$R_mean, na.rm = TRUE)
+        ## new_df$R_mean <- ifelse(new_df$t > T, max_R, new_df$R_mean)
+        ## out_df$I_mean <- new_df$I_mean + out_df$I_mean
+        ## out_df$R_mean <- new_df$R_mean + out_df$R_mean
         
     }
-    out_df$S_mean <- N - out_df$I_mean - out_df$R_mean
+##    out_df$S_mean <- N - out_df$I_mean - out_df$R_mean
     out_df$data_type <- data_type
     return(out_df)
 

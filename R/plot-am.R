@@ -163,7 +163,7 @@ plot_epidemic_df <- function(df, N, many_groups, cols = "black"){
 
     col_guide <- NULL
     if(!many_groups){
-           df$type <- "Model"
+           df$Type <- "Model"
            col_guide <- FALSE
        }
 
