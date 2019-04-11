@@ -130,7 +130,7 @@ summarize_epidemic <- function(sims_list, N, summary_fxn = "mean"){
                           .fun = function(df){
                               c(max_I = max(df$I),
                                 sum_I = max(df$R),
-                                max_t = which.max(df$I))
+                                max_t = df$t[which.max(df$I)])
                           })
     ave_sum_df <- plyr::ddply(sum_df, .var = c("model"),
                               .fun = function(df){
@@ -215,11 +215,12 @@ plot_epidemic_df <- function(df, N, many_groups, cols = "black"){
         ggplot2::geom_text(ggplot2::aes(label = model), nudge_x = -2 / N * 100,
                            nudge_y = 2) +
         ggplot2::labs(x = "Peak % infectious over all days",
-             y = "Final size",
+             y = "Final size (%)",
              title = title,
              subtitle = subtitle) +
         ggplot2::scale_color_manual(values = cols) +
-        ggplot2::scale_fill_manual(values = cols) + 
+        ggplot2::scale_fill_manual(values = cols) +
+        ggplot2::ylim(0,100) + 
         ## ggplot2::geom_errorbar(ggplot2::aes(ymin = sumImin,
         ##                                     ymax = sumImax)) +
         ## ggplot2::geom_errorbarh(ggplot2::aes(xmin = Imin,
