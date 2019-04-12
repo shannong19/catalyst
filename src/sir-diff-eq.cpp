@@ -98,6 +98,11 @@ NumericVector sirLoop(NumericVector x, double beta, double gamma, int T,
   return new_x;
 } 
 
+// Make list of neighbors
+// 
+// @param env_mat matrix of size N x E0 if has no assignment
+// @return list where each entry is a column of integers.  Each integer is a neighbor.  If it is -1, then the agent has no neighbors.
+// VERY IMPORTANT:  INDEXING FOR NEIGHBORS STARTS AT 0
 // [[Rcpp::export]]
 std::map<int, IntegerVector> initializeNeighbors(IntegerMatrix env_mat){
   std::map<int, IntegerVector> nbr_map;
@@ -118,10 +123,10 @@ std::map<int, IntegerVector> initializeNeighbors(IntegerMatrix env_mat){
         if((ref_env != 0) & (nn != mm)){
           nbr_env = env_mat(mm, ee);
           if(ref_env == nbr_env){
-            Rprintf("n: %d, m %d, ee %d \n", nn, mm, ee);
+           // Rprintf("n: %d, m %d, ee %d \n", nn, mm, ee);
             nbr_vec[ii] = mm;
             ii = ii + 1;
-            Rprintf("nbr vec: %d \n", nbr_vec[ii]);
+            //Rprintf("nbr vec: %d \n", nbr_vec[ii]);
             break;
           }
         }

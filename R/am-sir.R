@@ -18,6 +18,12 @@
 #' @param keep_U logical.  Default is FALSE
 #' @param write_sim logical. Default is FALSE
 #' @param writing_list list of writing parameters for write_sim.  Default is NULL.
+#' @param do_par logical.  Default is FALSE.  Coming soon
+#' @param do_preventions logical.  Default is FALSE
+#' @param preventions_type one of "isolation" or "quarantine".  Default is NULL
+#' @param preventions_nbrs neighbor list of pre-comptued neighbors given the prevention is in place.  Default is NULL
+#' @param env_df NxE data frame.  Default is NULL
+#' @param preventions_vars variable names which we subset to when applying preventions.  eg isolation means only neighbors are household ID.
 #' @return list of X a Tx3 matrix of number of S, I, and R at each time step;  A a TxN matrix of each agents state at each path or NULL if keep_A is FALSE
 am_sir <- function(L, T,
                    A0, prob_fxn = "KM",
@@ -28,7 +34,12 @@ am_sir <- function(L, T,
                    keep_U = FALSE,
                    write_sim = FALSE,
                    writing_list = NULL,
-                   do_par = FALSE){
+                   do_par = FALSE,
+                   do_preventions = FALSE,
+                   preventions_type = NULL,
+                   preventions_nbrs = NULL,
+                   env_mat = NULL,
+                   preventions_vars = NULL){
 
     ## Initialize
     N <- length(A0)
@@ -69,7 +80,12 @@ am_sir <- function(L, T,
                       keep_A = keep_A,
                       keep_U = keep_U,
                       write_sim = write_sim,
-                      writing_list = writing_list)
+                      writing_list = writing_list,
+                      do_preventions = do_preventions,
+                      preventions_type = preventions_type,
+                      prevention_nbrs = preventions_nbrs,
+                      env_df = env_df,
+                      preventions_vars = preventions_vars)
               X <- out$X
               X <- cbind(c(0:(T-1)), X, rep(ll, T))
               colnames(X) <- c("t", "S", "I", "R", "ll")
@@ -107,6 +123,11 @@ am_sir <- function(L, T,
 #' @param keep_U logical.  Default is FALSE
 #' @param write_sim logical. Default is FALSE
 #' @param writing_list list of writing parameters for write_sim.  Default is NULL.
+#' @param do_preventions logical.  Default is FALSE
+#' @param preventions_type one of "isolation" or "quarantine".  Default is NULL
+#' @param prevention_nbrs neighbor list of pre-comptued neighbors given the prevention is in place.  Default is NUL
+#' @param env_df NxE data frame.  Default is NULL
+#' @param preventions_vars variable names which we subset to when applying preventions.  eg isolation means only neighbors are household ID.
 #' @return list of X a Tx3 matrix of number of S, I, and R at each time step;  A a TxN matrix of each agents state at each path or NULL if keep_A is FALSE
 am_sir_one_sim <- function(ll = 1, A, prob_fxn = "KM",
                            par1_vec, gamma_vec,
@@ -115,13 +136,30 @@ am_sir_one_sim <- function(ll = 1, A, prob_fxn = "KM",
                            keep_A = FALSE,
                            keep_U = FALSE,
                            write_sim = FALSE,
-                           writing_list = NULL){
+                           writing_list = NULL,
+                           do_preventions = FALSE,
+                           preventions_type = NULL,
+                           env_df = NULL,
+                           preventions_vars = NULL){
 
     U <- NULL
     T <- nrow(A)
+    N <- ncol(A)
 
     out_A <- NULL
+    orig_nbrs <- nbr_list
+    if(do_preventions){  ## pre-compute prevention_neighbors
+        if(is.null(nbr_list)){
+            ## Populate neighbors list
+            mat <- matrix(rep(1, N), ncol = 1)
+            nbr_list <- initializeNeighbors(mat)
+        }
+        preventions_nbrs <- precompute_preventions_nbrs(env_df, preventions_vars)
+    }
     for(tt in 1:(T-1)){
+        if(do_preventions){
+            nbr_list <-updateNeighbors(orig_nbrs, preventions_nbrs, inf_inds)
+        }
         inf_inds <- which(A[tt,] == 1)
         prob_inf <- get_prob_inf(par1_vec, inf_inds,
                                  nbr_list,

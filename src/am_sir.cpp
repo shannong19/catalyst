@@ -39,7 +39,8 @@ IntegerVector AMTime_SIR(IntegerVector A,
   return newA;
 }
 
-
+// Get the number of neighbors who are infectious for each agent
+// // Starts at 0!
 // [[Rcpp::export]]
 IntegerVector get_n_nbr_inf(List nbr_list, IntegerVector inf_inds){
   int N = nbr_list.size();
@@ -55,6 +56,37 @@ IntegerVector get_n_nbr_inf(List nbr_list, IntegerVector inf_inds){
   return n_inf_nbrs;
   
 }
+
+
+
+// Update the neighbor list based ongoing preventions
+//
+// @param prevention_types one of "isolation", "quarantine", or "school_closure"
+// @param prevention_nbrs pre-computed list of nbrs post-prevention
+// @param orig_nbrs original neighbor list
+// @param inf_inds current infectious agent indices
+// @param env_mat N x E data frame
+// @details IMPORTANT:  INDEXING STARTS AT 0
+// @return updated neighborl list
+// [[Rcpp::export]]
+List updateNeighbors(List orig_nbrs, 
+                     List preventions_nbrs, 
+                     IntegerVector preventions_inds){
+  // Make new independent copy of original neighbors TODO: make more efficient
+  List new_nbrs = clone(orig_nbrs);
+  int n_inf = preventions_inds.size();
+  if(n_inf == 0){
+    return new_nbrs;
+  }
+  int index=0;
+  for(int ii=0; ii < n_inf; ii++){
+    index = preventions_inds[ii];
+    new_nbrs[index] = preventions_nbrs[index];
+  }
+  
+  return new_nbrs;
+}
+
 
 
 

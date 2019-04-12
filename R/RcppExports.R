@@ -13,6 +13,10 @@ get_n_nbr_inf <- function(nbr_list, inf_inds) {
     .Call(`_Catalyst_get_n_nbr_inf`, nbr_list, inf_inds)
 }
 
+updateNeighbors <- function(orig_nbrs, preventions_nbrs, preventions_inds) {
+    .Call(`_Catalyst_updateNeighbors`, orig_nbrs, preventions_nbrs, preventions_inds)
+}
+
 rcpp_hello <- function() {
     .Call(`_Catalyst_rcpp_hello`)
 }
