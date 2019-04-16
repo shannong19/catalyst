@@ -55,6 +55,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// removeNeighbors
+List removeNeighbors(List orig_nbrs, List preventions_nbrs, IntegerVector inf_inds, IntegerVector preventions_inds);
+RcppExport SEXP _Catalyst_removeNeighbors(SEXP orig_nbrsSEXP, SEXP preventions_nbrsSEXP, SEXP inf_indsSEXP, SEXP preventions_indsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< List >::type orig_nbrs(orig_nbrsSEXP);
+    Rcpp::traits::input_parameter< List >::type preventions_nbrs(preventions_nbrsSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type inf_inds(inf_indsSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type preventions_inds(preventions_indsSEXP);
+    rcpp_result_gen = Rcpp::wrap(removeNeighbors(orig_nbrs, preventions_nbrs, inf_inds, preventions_inds));
+    return rcpp_result_gen;
+END_RCPP
+}
 // rcpp_hello
 List rcpp_hello();
 RcppExport SEXP _Catalyst_rcpp_hello() {
@@ -198,6 +212,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_Catalyst_AMTime_SIR", (DL_FUNC) &_Catalyst_AMTime_SIR, 3},
     {"_Catalyst_get_n_nbr_inf", (DL_FUNC) &_Catalyst_get_n_nbr_inf, 2},
     {"_Catalyst_updateNeighbors", (DL_FUNC) &_Catalyst_updateNeighbors, 3},
+    {"_Catalyst_removeNeighbors", (DL_FUNC) &_Catalyst_removeNeighbors, 4},
     {"_Catalyst_rcpp_hello", (DL_FUNC) &_Catalyst_rcpp_hello, 0},
     {"_Catalyst_sirLoopGroups", (DL_FUNC) &_Catalyst_sirLoopGroups, 5},
     {"_Catalyst_sirLoop", (DL_FUNC) &_Catalyst_sirLoop, 5},

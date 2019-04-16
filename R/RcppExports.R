@@ -17,6 +17,10 @@ updateNeighbors <- function(orig_nbrs, preventions_nbrs, preventions_inds) {
     .Call(`_Catalyst_updateNeighbors`, orig_nbrs, preventions_nbrs, preventions_inds)
 }
 
+removeNeighbors <- function(orig_nbrs, preventions_nbrs, inf_inds, preventions_inds) {
+    .Call(`_Catalyst_removeNeighbors`, orig_nbrs, preventions_nbrs, inf_inds, preventions_inds)
+}
+
 rcpp_hello <- function() {
     .Call(`_Catalyst_rcpp_hello`)
 }

@@ -21,9 +21,10 @@
 #' @param do_par logical.  Default is FALSE.  Coming soon
 #' @param do_preventions logical.  Default is FALSE
 #' @param preventions_type one of "isolation" or "quarantine".  Default is NULL
-#' @param preventions_nbrs neighbor list of pre-comptued neighbors given the prevention is in place.  Default is NULL
 #' @param env_df NxE data frame.  Default is NULL
 #' @param preventions_vars variable names which we subset to when applying preventions.  eg isolation means only neighbors are household ID.
+#' @param days_infectious vector of size N.  number of days agent has been infected
+#' @param preventions_delay  how many days we wait to do preventions
 #' @return list of X a Tx3 matrix of number of S, I, and R at each time step;  A a TxN matrix of each agents state at each path or NULL if keep_A is FALSE
 am_sir <- function(L, T,
                    A0, prob_fxn = "KM",
@@ -37,9 +38,11 @@ am_sir <- function(L, T,
                    do_par = FALSE,
                    do_preventions = FALSE,
                    preventions_type = NULL,
-                   preventions_nbrs = NULL,
-                   env_mat = NULL,
-                   preventions_vars = NULL){
+                   env_df = NULL,
+                   preventions_vars = NULL,
+                   days_infectious = NULL,
+                   preventions_delay = 0){
+
 
     ## Initialize
     N <- length(A0)
@@ -70,34 +73,39 @@ am_sir <- function(L, T,
         }
 
         for(ll in 1:L){
-              out <- am_sir_one_sim(ll = ll,
-                      A = A,
-                      prob_fxn = prob_fxn,
-                      par1_vec = par1_vec,
-                      gamma_vec = gamma_vec,
-                      nbr_list = nbr_list,
-                      X_theor= X_theor,
-                      keep_A = keep_A,
-                      keep_U = keep_U,
-                      write_sim = write_sim,
-                      writing_list = writing_list,
-                      do_preventions = do_preventions,
-                      preventions_type = preventions_type,
-                      prevention_nbrs = preventions_nbrs,
-                      env_df = env_df,
-                      preventions_vars = preventions_vars)
-              X <- out$X
-              X <- cbind(c(0:(T-1)), X, rep(ll, T))
-              colnames(X) <- c("t", "S", "I", "R", "ll")
-              X_list[[ll]] <- X
 
-              ## U and A
-              if(keep_A){
-                  A_arr[ll,,] <- out$A
-              }
-              if(keep_U){
-                  U_arr[ll,,] <- out$U
-              }
+            if((ll %% 10) == 0){
+                print(ll)
+            }
+            out <- am_sir_one_sim(ll = ll,
+                                  A = A,
+                                  prob_fxn = prob_fxn,
+                                  par1_vec = par1_vec,
+                                  gamma_vec = gamma_vec,
+                                  nbr_list = nbr_list,
+                                  X_theor= X_theor,
+                                  keep_A = keep_A,
+                                  keep_U = keep_U,
+                                  write_sim = write_sim,
+                                  writing_list = writing_list,
+                                  do_preventions = do_preventions,
+                                  preventions_type = preventions_type,
+                                  env_df = env_df,
+                                  preventions_vars = preventions_vars,
+                                  days_infectious = days_infectious,
+                                  preventions_delay = preventions_delay)
+            X <- out$X
+            X <- cbind(c(0:(T-1)), X, rep(ll, T))
+            colnames(X) <- c("t", "S", "I", "R", "ll")
+            X_list[[ll]] <- X
+
+            ## U and A
+            if(keep_A){
+                A_arr[ll,,] <- out$A
+            }
+            if(keep_U){
+                U_arr[ll,,] <- out$U
+            }
               
         }
 
@@ -125,9 +133,10 @@ am_sir <- function(L, T,
 #' @param writing_list list of writing parameters for write_sim.  Default is NULL.
 #' @param do_preventions logical.  Default is FALSE
 #' @param preventions_type one of "isolation" or "quarantine".  Default is NULL
-#' @param prevention_nbrs neighbor list of pre-comptued neighbors given the prevention is in place.  Default is NUL
 #' @param env_df NxE data frame.  Default is NULL
-#' @param preventions_vars variable names which we subset to when applying preventions.  eg isolation means only neighbors are household ID.
+#' @param preventions_vars variable names which we subset to when applying preventions.  eg isolation means only neighbors are household ID.  Default is NULL
+#' @param days_infectious vector of size N.  number of days agent has been infected
+#' @param preventions_delay  how many days we wait to do preventions
 #' @return list of X a Tx3 matrix of number of S, I, and R at each time step;  A a TxN matrix of each agents state at each path or NULL if keep_A is FALSE
 am_sir_one_sim <- function(ll = 1, A, prob_fxn = "KM",
                            par1_vec, gamma_vec,
@@ -140,27 +149,44 @@ am_sir_one_sim <- function(ll = 1, A, prob_fxn = "KM",
                            do_preventions = FALSE,
                            preventions_type = NULL,
                            env_df = NULL,
-                           preventions_vars = NULL){
+                           preventions_vars = NULL,
+                           days_infectious = NULL,
+                           preventions_delay = 0){
 
     U <- NULL
     T <- nrow(A)
     N <- ncol(A)
 
     out_A <- NULL
-    orig_nbrs <- nbr_list
+
+##f    preventions_nbrs <- NULL
     if(do_preventions){  ## pre-compute prevention_neighbors
         if(is.null(nbr_list)){
             ## Populate neighbors list
             mat <- matrix(rep(1, N), ncol = 1)
-            nbr_list <- initializeNeighbors(mat)
+            nbr_list <- initializeNeighbors(mat)  ## This assumes EVERYONE is a neighbor at first
         }
-        preventions_nbrs <- precompute_preventions_nbrs(env_df, preventions_vars)
+        preventions_nbrs <- precompute_preventions_nbrs(env_df, preventions_vars) # these are the nbrs that are permanent
+        preventions_inds <- 1:length(preventions_nbrs) -1 
     }
+    orig_nbrs <- nbr_list
+    days_infectious <- rep(0, N)
     for(tt in 1:(T-1)){
+        inf_inds <- which(A[tt,] == 1) - 1 ## to start at index 0
         if(do_preventions){
-            nbr_list <-updateNeighbors(orig_nbrs, preventions_nbrs, inf_inds)
+            preventions_list <- update_preventions(nbr_list,
+                               preventions_nbrs,
+                               preventions_inds,
+                               inf_inds,
+                               days_infectious,
+                               preventions_delay,
+                               preventions_type)
+            nbr_list <- preventions_list$new_nbrs
+            preventions_inds <- preventions_list$new_preventions_inds
+            do_preventions <- preventions_list$new_do_preventions
+            days_infectious <- preventions_list$new_days_infectious
         }
-        inf_inds <- which(A[tt,] == 1)
+
         prob_inf <- get_prob_inf(par1_vec, inf_inds,
                                  nbr_list,
                                  X_theor[tt,],
@@ -179,9 +205,89 @@ am_sir_one_sim <- function(ll = 1, A, prob_fxn = "KM",
     
     return(list(X = X, U = U, A = A))
 
-
-
 }
+
+#' Update preventions
+#'
+#' @param do_preventions logical.  Default is FALSE
+#' @param preventions_nbrs list of permanent neighbors
+#' @param preventions_inds vector of indices we will do preventions on.  indexing starts at 0
+#' @param inf_inds indices of infectious agents.  indexing starts at 0
+#' @param days_infectious vector of size N.  number of days agent has been infected
+#' @param preventions_delay  how many days we wait to do preventiosn
+#' @return list with new nbr_list, prevention_inds, and whether we should continue preventions
+update_preventions <- function(nbr_list,
+                               preventions_nbrs,
+                               preventions_inds,
+                               inf_inds,
+                               days_infectious = NULL,
+                               preventions_delay = 0,
+                               preventions_type = "isolation"){
+
+    do_preventions <- TRUE
+    ## If nothing to prevent, change do preventions and return the rest
+    if(length(preventions_inds) == 0 |
+       length(inf_inds) == 0 |
+       preventions_inds[1] == -1 | inf_inds[1] == -1){
+        do_preventions <- FALSE
+        return(list(new_nbrs = nbr_list,
+                new_preventions_inds = preventions_inds,
+                new_do_preventions = do_preventions,
+                new_days_infectious = days_infectious))
+    }
+
+    ## Otherwise check which infectious we apply preventions to
+    if(!is.null(days_infectious)){
+        if(inf_inds[1] != -1){
+            ## Add one to the days infectious
+            if(preventions_type == "isolation"){
+                days_infectious[inf_inds + 1] <- days_infectious[inf_inds + 1] + 1
+            } else if(preventions_type == "quarantine"){
+                quar_inds <- get_quar_inds(inf_inds, preventions_nbrs)
+                days_infectious[quar_inds + 1] <- days_infectious[quar_inds + 1] + 1
+            }
+        }
+        preventions_logical <- ifelse(days_infectious > preventions_delay,
+                                      1, 0)
+        preventions_inds <- which(preventions_logical == 1) - 1
+        if(length(preventions_inds) == 0){
+            preventions_inds <- -1
+        }
+    }
+
+
+      ## remove infectious neighbors who have preventions implemented on them from the neighbors list.  Keep the preventions nbrs.  These people will always be susceptible.
+    ## Remaining neighbors are unchanged.
+    ##TODO:  inefficient because this makes new copy of nbr_list every time step  
+    nbr_list <- removeNeighbors(nbr_list, preventions_nbrs,
+                                preventions_inds, inf_inds)
+
+    ## Update preventions_inds if days_infectious is null
+    if(is.null(days_infectious)){
+        preventions_inds <- preventions_inds[-which(preventions_inds %in%
+                                                   inf_inds)]
+        if(length(preventions_inds) == 0){
+            preventions_inds <- -1
+        }
+    }
+
+    return(list(new_nbrs = nbr_list,
+                new_preventions_inds = preventions_inds,
+                new_do_preventions = do_preventions,
+                new_days_infectious = days_infectious))
+}
+
+#' Extract the indices to quarantine
+#'
+#' @param inf_inds currently infectious.  indexing starts at 0.
+#' @param nbr_list list of neighbors
+#' @return quarantine inds.  indexing starts at 0!
+get_quar_inds <- function(inf_inds, nbr_list){
+    nbr_inds <- do.call('c', nbr_list[inf_inds + 1])
+    quar_inds <- sort(unique(c(nbr_inds, inf_inds)))
+    return(quar_inds)
+}
+
 
 #' @param par1_vec vector of length N ranging between 0 and 1.  This corresponds to "beta" for KM and "rho" for RF
 #' @param inf_inds indices of infectious neigbhors
@@ -201,9 +307,11 @@ get_prob_inf <- function(par1_vec, inf_inds,
         nbr_inf_inds <- inf_inds
         n_inf_nbrs <- length(nbr_inf_inds)
     } else {
-            n_inf_nbrs <- get_n_nbr_inf(nbr_list, inf_inds)
+        n_inf_nbrs <- get_n_nbr_inf(nbr_list, inf_inds)
+        ## Change proportion o infectious
+       # n_nbrs <- get_n_nbr_inf(nbr_list, 1:N - 1)
+       # N <- ifelse(n_nbrs == 0, 1, n_nbrs) ## avoid divide by 0
     }
-    
     if(prob_fxn == "KM"){
         prob_inf <- par1_vec * n_inf_nbrs / N
     } else if(prob_fxn == "RF"){
