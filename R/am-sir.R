@@ -74,7 +74,7 @@ am_sir <- function(L, T,
 
         for(ll in 1:L){
 
-            if((ll %% 10) == 0){
+            if((ll %% 100) == 0){
                 print(ll)
             }
             out <- am_sir_one_sim(ll = ll,
@@ -170,7 +170,7 @@ am_sir_one_sim <- function(ll = 1, A, prob_fxn = "KM",
         preventions_inds <- 1:length(preventions_nbrs) -1 
     }
     orig_nbrs <- nbr_list
-    days_infectious <- rep(0, N)
+
     for(tt in 1:(T-1)){
         inf_inds <- which(A[tt,] == 1) - 1 ## to start at index 0
         if(do_preventions){
@@ -224,6 +224,7 @@ update_preventions <- function(nbr_list,
                                preventions_delay = 0,
                                preventions_type = "isolation"){
 
+
     do_preventions <- TRUE
     ## If nothing to prevent, change do preventions and return the rest
     if(length(preventions_inds) == 0 |
@@ -247,8 +248,8 @@ update_preventions <- function(nbr_list,
                 days_infectious[quar_inds + 1] <- days_infectious[quar_inds + 1] + 1
             }
         }
-        preventions_logical <- ifelse(days_infectious > preventions_delay,
-                                      1, 0)
+        preventions_logical <- ifelse(days_infectious == preventions_delay,
+                                      1, 0)  ## Only add NEW cases to the preventions list.
         preventions_inds <- which(preventions_logical == 1) - 1
         if(length(preventions_inds) == 0){
             preventions_inds <- -1
