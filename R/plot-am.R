@@ -84,19 +84,27 @@ am_plot_mean_var <- function(X, obs = NULL,
 #'
 #' @param sims_list list of the "X" output from am_sir() function
 #' @param N number of total agents
+#' @param title character passed on to ggplot
+#' @param subtitle character passed on to ggplot
+#' @param summary_fxn either "mean" or "median".  How we summarize the summary statistics
+#' @param many_groups logical.  Default is FALSE.  If TRUE, we will do different colors on them.  Corresponds to the "Type" column
 #' @return list with two ggplots and summarized, plottable df
 plot_epidemic_summary <- function(sims_list, N,
                                   title,
                                   subtitle,
                                   summary_fxn = "mean",
                                   many_groups = FALSE,
-                                  cols = "black"){
+                                  cols = "black",
+                                  type_name = "Type"){
 
     df <- summarize_epidemic(sims_list, N, summary_fxn)
 
     ## Plot max t vs max I
     plot_list <- plot_epidemic_df(df, N, many_groups = many_groups,
-                                  cols = cols)
+                                  cols = cols,
+                                  title,
+                                  subtitle,
+                                  type_name)
    
     return(list(g1 = plot_list$g1, g2 = plot_list$g2, df = df))
 
@@ -124,15 +132,24 @@ summarize_epidemic <- function(sims_list, N, summary_fxn = "mean"){
         df <- X
     }
 
+    vars <- c("model", "ll")
+    vars2 <- c("model")
+    if("Type" %in% colnames(X)){
+        vars <- c(vars, "Type")
+        vars2 <- c(vars2, "Type")
+        df$Type <- factor(df$Type)
+    }
+
+
     
     ## Make into a function
-    sum_df <- plyr::ddply(df, .var = c("model", "ll"),
+    sum_df <- plyr::ddply(df, .var = vars,
                           .fun = function(df){
                               c(max_I = max(df$I),
                                 sum_I = max(df$R),
                                 max_t = df$t[which.max(df$I)])
                           })
-    ave_sum_df <- plyr::ddply(sum_df, .var = c("model"),
+    ave_sum_df <- plyr::ddply(sum_df, .var = vars2,
                               .fun = function(df){
                                   c(mean_max_I = sum_fxn(df$max_I),
                                     var_max_I = var(df$max_I),
@@ -159,7 +176,10 @@ summarize_epidemic <- function(sims_list, N, summary_fxn = "mean"){
 }
 
 
-plot_epidemic_df <- function(df, N, many_groups, cols = "black"){
+plot_epidemic_df <- function(df, N, many_groups, cols = "black",
+                             title,
+                             subtitle,
+                             type_name = "Type"){
 
     col_guide <- NULL
     if(!many_groups){
@@ -173,7 +193,7 @@ plot_epidemic_df <- function(df, N, many_groups, cols = "black"){
                                        y = mean_max_t,
                                        group = Type,
                                        col = Type,
-                                       shape = Type,
+##                                       shape = Type,
                                        x0 = mean_max_I / N * 100,
                                        y0 = mean_max_t,
                                        a = sqrt(var_max_I) / N * 100,
@@ -181,16 +201,16 @@ plot_epidemic_df <- function(df, N, many_groups, cols = "black"){
                                        angle = 0,
                                        fill = Type)) +
         ggplot2::geom_point(size = 2) + my_theme() +
-        ggplot2::geom_text(ggplot2::aes(label = model), nudge_x = -2 / N * 100,
-                           nudge_y = 2) +
+  #      ggplot2::geom_text(ggplot2::aes(label = model), nudge_x = -2 / N * 100,
+  #                         nudge_y = 2, show_guide = FALSE) +
         ggplot2::labs(x = "Peak % infectious over all days",
              y = "Day of peak % infectious",
              title = title,
              subtitle = subtitle) +
-        ggplot2::scale_color_manual(values = cols) +
-        ggplot2::scale_fill_manual(values = cols) + 
+        ggplot2::scale_color_manual(values = cols, name = type_name) +
+        ggplot2::scale_fill_manual(values = cols, name = type_name) + 
         ggplot2::guides(color = col_guide, shape = col_guide, fill = col_guide) +
-        ggforce::geom_ellipse(col = NA, alpha = .3)
+        ggforce::geom_ellipse(alpha = .1,  size  =1, linetype = 1)
         
         ## ggplot2::geom_errorbar(ggplot2::aes(ymin = tmin,
         ##                                     ymax = tmax)) +
@@ -204,7 +224,7 @@ plot_epidemic_df <- function(df, N, many_groups, cols = "black"){
                                        y = mean_sum_I / N * 100,
                                        group = Type,
                                        col = Type,
-                                       shape = Type,
+                                    #   shape = Type,
                                        x0 = mean_max_I / N * 100,
                                        y0 = mean_sum_I / N * 100,
                                        a = sqrt(var_max_I) / N * 100,
@@ -212,21 +232,21 @@ plot_epidemic_df <- function(df, N, many_groups, cols = "black"){
                                        angle = 0,
                                        fill = Type)) +
         ggplot2::geom_point(size = 2) + my_theme() +
-        ggplot2::geom_text(ggplot2::aes(label = model), nudge_x = -2 / N * 100,
-                           nudge_y = 2) +
+   ##     ggplot2::geom_text(ggplot2::aes(label = model), nudge_x = -2 / N * 100,
+     ##                      nudge_y = 2) +
         ggplot2::labs(x = "Peak % infectious over all days",
              y = "Final size (%)",
              title = title,
              subtitle = subtitle) +
-        ggplot2::scale_color_manual(values = cols) +
-        ggplot2::scale_fill_manual(values = cols) +
-        ggplot2::ylim(0,100) + 
+        ggplot2::scale_color_manual(values = cols, name = type_name) +
+        ggplot2::scale_fill_manual(values = cols, name = type_name) +
+        ggplot2::ylim(-25,125) + 
         ## ggplot2::geom_errorbar(ggplot2::aes(ymin = sumImin,
         ##                                     ymax = sumImax)) +
         ## ggplot2::geom_errorbarh(ggplot2::aes(xmin = Imin,
         ##                                      xmax = Imax)) +
         ggplot2::guides(color = col_guide, shape = col_guide, fill = col_guide) +
-        ggforce::geom_ellipse(col = NA, alpha = .3)
+        ggforce::geom_ellipse(alpha = .1, size  =1)
 
     gridExtra::grid.arrange(g1, g2, nrow = 2)
     return(list(g1 = g1, g2 = g2))
