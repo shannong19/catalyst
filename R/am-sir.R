@@ -44,6 +44,7 @@ am_sir <- function(L, T,
                    preventions_delay = 0){
 
 
+    print(paste("delay:", preventions_delay))
     ## Initialize
     N <- length(A0)
     A <- matrix(0, nrow = T, ncol = N)
@@ -172,7 +173,15 @@ am_sir_one_sim <- function(ll = 1, A, prob_fxn = "KM",
     orig_nbrs <- nbr_list
 
     for(tt in 1:(T-1)){
+   ##     print(paste("tt", tt))
         inf_inds <- which(A[tt,] == 1) - 1 ## to start at index 0
+        if(length(inf_inds) == 0 | inf_inds[1] == -1){  ## if there are no infectious left, there is no more movement, can output df
+            for(ss in tt:(T -1)){
+                A[ss + 1, ] <-  A[tt, ]
+            }
+            break
+        }
+      ##  print(paste("inf inds:", inf_inds))
         if(do_preventions){
             preventions_list <- update_preventions(nbr_list,
                                preventions_nbrs,
@@ -186,7 +195,6 @@ am_sir_one_sim <- function(ll = 1, A, prob_fxn = "KM",
             do_preventions <- preventions_list$new_do_preventions
             days_infectious <- preventions_list$new_days_infectious
         }
-
         prob_inf <- get_prob_inf(par1_vec, inf_inds,
                                  nbr_list,
                                  X_theor[tt,],
@@ -225,21 +233,22 @@ update_preventions <- function(nbr_list,
                                preventions_type = "isolation"){
 
 
+   
     do_preventions <- TRUE
     ## If nothing to prevent, change do preventions and return the rest
-    if(length(preventions_inds) == 0 |
-       length(inf_inds) == 0 |
-       preventions_inds[1] == -1 | inf_inds[1] == -1){
-        do_preventions <- FALSE
+    if(length(inf_inds) == 0 | inf_inds[1] == -1){
+        do_preventions <- FALSE  ## no need to prevent if 0 infectious left
+
+
         return(list(new_nbrs = nbr_list,
-                new_preventions_inds = preventions_inds,
-                new_do_preventions = do_preventions,
-                new_days_infectious = days_infectious))
+                    new_preventions_inds = preventions_inds,
+                    new_do_preventions = do_preventions,
+                    new_days_infectious = days_infectious))
     }
 
     ## Otherwise check which infectious we apply preventions to
     if(!is.null(days_infectious)){
-        if(inf_inds[1] != -1){
+        if(length(inf_inds) > 0 & inf_inds[1] != -1){
             ## Add one to the days infectious
             if(preventions_type == "isolation"){
                 days_infectious[inf_inds + 1] <- days_infectious[inf_inds + 1] + 1
@@ -254,6 +263,7 @@ update_preventions <- function(nbr_list,
         if(length(preventions_inds) == 0){
             preventions_inds <- -1
         }
+
     }
 
 

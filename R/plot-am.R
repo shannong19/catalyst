@@ -95,7 +95,8 @@ plot_epidemic_summary <- function(sims_list, N,
                                   summary_fxn = "mean",
                                   many_groups = FALSE,
                                   cols = "black",
-                                  type_name = "Type"){
+                                  type_name = "Type",
+                                  labs = NULL){
 
     df <- summarize_epidemic(sims_list, N, summary_fxn)
 
@@ -104,7 +105,8 @@ plot_epidemic_summary <- function(sims_list, N,
                                   cols = cols,
                                   title,
                                   subtitle,
-                                  type_name)
+                                  type_name,
+                                  labs)
    
     return(list(g1 = plot_list$g1, g2 = plot_list$g2, df = df))
 
@@ -179,7 +181,8 @@ summarize_epidemic <- function(sims_list, N, summary_fxn = "mean"){
 plot_epidemic_df <- function(df, N, many_groups, cols = "black",
                              title,
                              subtitle,
-                             type_name = "Type"){
+                             type_name = "Type",
+                             labs = NULL){
 
     col_guide <- NULL
     if(!many_groups){
@@ -187,6 +190,9 @@ plot_epidemic_df <- function(df, N, many_groups, cols = "black",
            col_guide <- FALSE
        }
 
+    if(is.null(labs)){
+        labs <- unique(df$Type)
+    }
 
      g1 <- ggplot2::ggplot(data = df,
                           ggplot2::aes(x = mean_max_I / N * 100,
@@ -196,8 +202,8 @@ plot_epidemic_df <- function(df, N, many_groups, cols = "black",
 ##                                       shape = Type,
                                        x0 = mean_max_I / N * 100,
                                        y0 = mean_max_t,
-                                       a = sqrt(var_max_I) / N * 100,
-                                       b = sqrt(var_max_t),
+                                       a = 2 * sqrt(var_max_I) / N * 100,
+                                       b = 2 * sqrt(var_max_t),
                                        angle = 0,
                                        fill = Type)) +
         ggplot2::geom_point(size = 2) + my_theme() +
@@ -207,10 +213,12 @@ plot_epidemic_df <- function(df, N, many_groups, cols = "black",
              y = "Day of peak % infectious",
              title = title,
              subtitle = subtitle) +
-        ggplot2::scale_color_manual(values = cols, name = type_name) +
-        ggplot2::scale_fill_manual(values = cols, name = type_name) + 
+        ggplot2::scale_color_manual(values = cols, name = type_name, labels = labs) +
+        ggplot2::scale_fill_manual(values = cols, name = type_name, labels = labs) + 
         ggplot2::guides(color = col_guide, shape = col_guide, fill = col_guide) +
-        ggforce::geom_ellipse(alpha = .1,  size  =1, linetype = 1)
+        ggforce::geom_ellipse(alpha = .1,  size  =1, linetype = 1) +
+        ggplot2::ylim(-30, 60) +
+        ggplot2::xlim(-15, 80) 
         
         ## ggplot2::geom_errorbar(ggplot2::aes(ymin = tmin,
         ##                                     ymax = tmax)) +
@@ -227,8 +235,8 @@ plot_epidemic_df <- function(df, N, many_groups, cols = "black",
                                     #   shape = Type,
                                        x0 = mean_max_I / N * 100,
                                        y0 = mean_sum_I / N * 100,
-                                       a = sqrt(var_max_I) / N * 100,
-                                       b = sqrt(var_sum_I) / N * 100,
+                                       a = 2 * sqrt(var_max_I) / N * 100,
+                                       b = 2 * sqrt(var_sum_I) / N * 100,
                                        angle = 0,
                                        fill = Type)) +
         ggplot2::geom_point(size = 2) + my_theme() +
@@ -238,9 +246,10 @@ plot_epidemic_df <- function(df, N, many_groups, cols = "black",
              y = "Final size (%)",
              title = title,
              subtitle = subtitle) +
-        ggplot2::scale_color_manual(values = cols, name = type_name) +
-        ggplot2::scale_fill_manual(values = cols, name = type_name) +
-        ggplot2::ylim(-25,125) + 
+        ggplot2::scale_color_manual(values = cols, name = type_name, labels = labs) +
+        ggplot2::scale_fill_manual(values = cols, name = type_name, labels = labs) +
+        ggplot2::ylim(-50,150) +
+        ggplot2::xlim(-15, 80) + 
         ## ggplot2::geom_errorbar(ggplot2::aes(ymin = sumImin,
         ##                                     ymax = sumImax)) +
         ## ggplot2::geom_errorbarh(ggplot2::aes(xmin = Imin,
