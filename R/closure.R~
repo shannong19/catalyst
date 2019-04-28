@@ -1,0 +1,10 @@
+update_closure <- function(nbr_list,
+                                           inf_inds,
+                                           closure_thresh,
+                                           closure_vars,
+                                           closure_inds_list,
+                                           closure_time,
+                                           closure_max_T,
+                           env_df){
+
+    }
