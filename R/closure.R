@@ -34,25 +34,27 @@ update_closure <- function(nbr_list,
     ##      b. update closure_time
     ##    ELSE closure_pct < closure_thresh
     ##       a. Return same nbr_list
+    do_closure <- TRUE
 
     if(length(closure_vars) == 0) stop("closure_vars is length 0")
+    new_nbr_list <- nbr_list
     for(ii in 1:length(closure_vars)){
         closure_var <- closure_vars[ii]
         n_clos_var_cats <- length(closure_thresh[[ii]])
-        for(jj in 1:nclos_var_cats){
+        for(jj in 1:n_clos_var_cats){
             cat_inds <- closure_inds_list[[ii]][[jj]]
             ct <- closure_time[[ii]][jj]
             cT <- closure_max_T[[ii]][jj]
             cThresh <- closure_thresh[[ii]][jj]
             if(ct > cT){
-                new_nbr_list <- add_closure_nbr(nbr_list, cat_inds)
+                new_nbr_list <- addClosureNbrs(nbr_list, cat_inds)
                 do_closure <- FALSE
             } else if(ct > 0){
                 closure_time[[ii]][jj] <- ct + 1
             } else{
                 cur_inf_pct <- sum(inf_inds %in% cat_inds) / length(cat_inds)
                 if(cur_inf_pct > cThresh){
-                    new_nbr_list <- remove_closure_nbr(nbr_list, cat_inds)
+                    new_nbr_list <- removeClosureNbrs(nbr_list, cat_inds)
                     closure_time[[ii]][jj] <- ct + 1
                 }
             }

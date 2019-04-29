@@ -25,8 +25,12 @@
 #' @param preventions_vars variable names which we subset to when applying preventions.  eg isolation means only neighbors are household ID.
 #' @param days_infectious vector of size N.  number of days agent has been infected
 #' @param preventions_delay  how many days we wait to do preventions
+#' @param do_closure logical. Default is FALSE
 #' @param closure_thresh list of length closure_vars where each entry of the list is the closure threshold percentage for the corresponding var
 #' @param closure_vars which variables in env_df we will close on
+#' @param closure_inds_list list of lists.  first level corresponds to the variable which we are looking at.  second level gives the category of hte variable we are looking at.  in the second level list, there are the indices of all the agents who belong to the same variable category
+#' @param closure_time list of length closure_vars where each entry of the list is the time we will close the structure once closure is implemented
+#' @param closure_max_T list of length closure_vars where each entry of the list is the max time we will close the structure
 #' @return list of X a Tx3 matrix of number of S, I, and R at each time step;  A a TxN matrix of each agents state at each path or NULL if keep_A is FALSE
 am_sir <- function(L, T,
                    A0, prob_fxn = "KM",
@@ -44,8 +48,12 @@ am_sir <- function(L, T,
                    preventions_vars = NULL,
                    days_infectious = NULL,
                    preventions_delay = 0,
+                   do_closure = FALSE,
                    closure_thresh = list(.5),
-                   closure_vars = NULL
+                   closure_vars = NULL,
+                   closure_inds_list = NULL,
+                   closure_time = list(0),
+                   closure_max_T = list(1)
                    ){
 
 
@@ -100,11 +108,12 @@ am_sir <- function(L, T,
                                   preventions_vars = preventions_vars,
                                   days_infectious = days_infectious,
                                   preventions_delay = preventions_delay,
+                                  do_closure = do_closure,
                                   closure_thresh = closure_thresh,
                                   closure_vars = closure_vars,
-                                  closure_inds_list = NULL,
-                                  closure_time = list(0),
-                                  closure_max_T = list(1))
+                                  closure_inds_list = closure_inds_list,
+                                  closure_time = closure_time,
+                                  closure_max_T = closure_max_T)
             X <- out$X
             X <- cbind(c(0:(T-1)), X, rep(ll, T))
             colnames(X) <- c("t", "S", "I", "R", "ll")
@@ -168,7 +177,7 @@ am_sir_one_sim <- function(ll = 1, A, prob_fxn = "KM",
                            preventions_vars = NULL,
                            days_infectious = NULL,
                            preventions_delay = 0,
-                           do_closure = FALSE
+                           do_closure = FALSE,
                            closure_thresh = NULL,
                            closure_vars = NULL,
                            closure_inds_list = NULL,
@@ -182,14 +191,16 @@ am_sir_one_sim <- function(ll = 1, A, prob_fxn = "KM",
     out_A <- NULL
 
 ##f    preventions_nbrs <- NULL
-    if(do_preventions){  ## pre-compute prevention_neighbors
+    if(do_preventions | do_closure){  ## pre-compute prevention_neighbors
         if(is.null(nbr_list)){
             ## Populate neighbors list
             mat <- matrix(rep(1, N), ncol = 1)
             nbr_list <- initializeNeighbors(mat)  ## This assumes EVERYONE is a neighbor at first
         }
-        preventions_nbrs <- precompute_preventions_nbrs(env_df, preventions_vars) # these are the nbrs that are permanent
-        preventions_inds <- 1:length(preventions_nbrs) -1 
+        if(do_preventions){
+            preventions_nbrs <- precompute_preventions_nbrs(env_df, preventions_vars) # these are the nbrs that are permanent
+            preventions_inds <- 1:length(preventions_nbrs) -1
+        }
     }
 
     
@@ -207,6 +218,7 @@ am_sir_one_sim <- function(ll = 1, A, prob_fxn = "KM",
         ##  print(paste("inf inds:", inf_inds))
         ## Isolation and quarantine
         if(do_preventions){
+            browser()
             preventions_list <- update_preventions(nbr_list,
                                preventions_nbrs,
                                preventions_inds,
@@ -289,7 +301,7 @@ update_preventions <- function(nbr_list,
 #' @param days_infectious vector of size N.  number of days agent has been infected
 #' @param preventions_delay  how many days we wait to do preventiosn
 #' @return list with new nbr_list, prevention_inds, and whether we should continue preventions
-update_preventions.iso_quar <- function(nbr_list,
+update_preventions.quar_iso <- function(nbr_list,
                                preventions_nbrs,
                                preventions_inds,
                                inf_inds,

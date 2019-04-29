@@ -69,6 +69,41 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// rcppRev
+IntegerVector rcppRev(IntegerVector x);
+RcppExport SEXP _Catalyst_rcppRev(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerVector >::type x(xSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcppRev(x));
+    return rcpp_result_gen;
+END_RCPP
+}
+// removeClosureNbrs
+List removeClosureNbrs(List nbr_list, IntegerVector cat_inds);
+RcppExport SEXP _Catalyst_removeClosureNbrs(SEXP nbr_listSEXP, SEXP cat_indsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< List >::type nbr_list(nbr_listSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type cat_inds(cat_indsSEXP);
+    rcpp_result_gen = Rcpp::wrap(removeClosureNbrs(nbr_list, cat_inds));
+    return rcpp_result_gen;
+END_RCPP
+}
+// addClosureNbrs
+List addClosureNbrs(List nbr_list, IntegerVector cat_inds);
+RcppExport SEXP _Catalyst_addClosureNbrs(SEXP nbr_listSEXP, SEXP cat_indsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< List >::type nbr_list(nbr_listSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type cat_inds(cat_indsSEXP);
+    rcpp_result_gen = Rcpp::wrap(addClosureNbrs(nbr_list, cat_inds));
+    return rcpp_result_gen;
+END_RCPP
+}
 // rcpp_hello
 List rcpp_hello();
 RcppExport SEXP _Catalyst_rcpp_hello() {
@@ -213,6 +248,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_Catalyst_get_n_nbr_inf", (DL_FUNC) &_Catalyst_get_n_nbr_inf, 2},
     {"_Catalyst_updateNeighbors", (DL_FUNC) &_Catalyst_updateNeighbors, 3},
     {"_Catalyst_removeNeighbors", (DL_FUNC) &_Catalyst_removeNeighbors, 4},
+    {"_Catalyst_rcppRev", (DL_FUNC) &_Catalyst_rcppRev, 1},
+    {"_Catalyst_removeClosureNbrs", (DL_FUNC) &_Catalyst_removeClosureNbrs, 2},
+    {"_Catalyst_addClosureNbrs", (DL_FUNC) &_Catalyst_addClosureNbrs, 2},
     {"_Catalyst_rcpp_hello", (DL_FUNC) &_Catalyst_rcpp_hello, 0},
     {"_Catalyst_sirLoopGroups", (DL_FUNC) &_Catalyst_sirLoopGroups, 5},
     {"_Catalyst_sirLoop", (DL_FUNC) &_Catalyst_sirLoop, 5},

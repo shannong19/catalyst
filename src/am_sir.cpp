@@ -154,6 +154,125 @@ List removeNeighbors(List orig_nbrs, List preventions_nbrs,
 
 }
 
+// From http://gallery.rcpp.org/articles/reversing-a-vector/
+// [[Rcpp::export]]
+IntegerVector rcppRev(IntegerVector x) {
+  IntegerVector revX = clone<IntegerVector>(x);
+  std::reverse(revX.begin(), revX.end());
+  ::Rf_copyMostAttrib(x, revX); 
+  return revX;
+} 
+
+
+
+// Remove isolated/quarantined agents from the neighbors list
+// 
+// @param nbr_list neighbor list of agents and their respective neighbors
+// @param cat_inds indices we need to mutually remove from one another
+// @return new_nbrs which has removed the cat_inds
+// [[Rcpp::export]]
+List removeClosureNbrs(List nbr_list, 
+                     IntegerVector cat_inds){
+  // Make new independent copy of original neighbors TODO: make more efficient
+  List new_nbrs = clone(nbr_list);
+  if(cat_inds.size() == 0 |
+     cat_inds(0) == -1 ){  // no preventions to be made, return original neighbor list without change
+    return new_nbrs;
+  }
+  // Loop through the cat_inds
+  // Find their neighbors
+  // Take set difference of neighbors and cat inds
+  // new_nbrs_list is the set difference
+  // if length of set diff is 0, return -1
+  int n_cat_inds = cat_inds.size();
+  int index;
+  IntegerVector set_diff_inds;
+  IntegerVector all_nbr_inds;
+  for(int ii=0; ii < n_cat_inds; ii++){
+    index = cat_inds(ii);
+    all_nbr_inds = new_nbrs[index];
+    //Rprintf("prev_ind: %d; all_nbr_inds(0): %d\n", prev_ind, all_nbr_inds(0));
+    if(all_nbr_inds(0) == -1){ // if no neighbors, certainly no set difference
+      continue;
+    }
+    set_diff_inds = setdiff(all_nbr_inds, cat_inds);
+    int n_set_diff = set_diff_inds.size();
+    // Rprintf("n_set_diff: %d\n", n_set_diff);
+    if(n_set_diff == 0){ // then new nbrs is -1
+      new_nbrs[index] = -1;
+    } else {
+      new_nbrs[index] = sort_unique(set_diff_inds);
+    }
+  
+  }
+  
+  return new_nbrs;
+  
+}
+
+
+
+// Remove isolated/quarantined agents from the neighbors list
+// 
+// @param nbr_list neighbor list of agents and their respective neighbors
+// @param cat_inds indices we need to mutually add to one another
+// @return new_nbrs which has re-added the cat_inds
+// [[Rcpp::export]]
+List addClosureNbrs(List nbr_list, 
+                       IntegerVector cat_inds){
+  // Make new independent copy of original neighbors TODO: make more efficient
+  List new_nbrs = clone(nbr_list);
+  if(cat_inds.size() == 0 |
+     cat_inds(0) == -1 ){  // no preventions to be made, return original neighbor list without change
+    return new_nbrs;
+  }
+  // Loop through the cat_inds
+  // Find their neighbors
+  // Take set difference of neighbors and cat inds
+  // new_nbrs_list is the set difference
+  // if length of set diff is 0, return -1
+  int n_cat_inds = cat_inds.size();
+  IntegerVector index(1);
+  //Rprintf("index %d\n", index(0));
+  IntegerVector set_diff_inds;
+  IntegerVector all_nbr_inds;
+  IntegerVector cat_inds_no_index;
+  for(int ii=0; ii < n_cat_inds; ii++){
+    index(0) = cat_inds(ii);
+  //  Rprintf("index %d\n", index(0));
+   // Rprintf("cat_inds.size() %d\n", cat_inds.size());
+   // Rprintf("cat_inds(0) %d, index(0) %d\n", cat_inds(0), index(0));
+    all_nbr_inds = new_nbrs[index(0)];
+   // Rprintf("progress \n");
+    if(cat_inds.size() == 1 & index(0) == cat_inds(0)){ // avoid empty set
+     // Rprintf("more progress\n");
+      IntegerVector temp_vec(1);
+      temp_vec(0) = -1;
+      cat_inds_no_index = temp_vec;
+    //  Rprintf("in loop %d\n", cat_inds_no_index(0));
+    } else { 
+   //   Rprintf("why here %d\n", index(0));
+      cat_inds_no_index = setdiff(cat_inds, index);
+    }
+   // Rprintf("ahh\n");
+   // Rprintf("setdiff %d\n", cat_inds_no_index(0));
+    if(cat_inds_no_index.size() == 0 | cat_inds_no_index(0) == -1){ // no neighbors to add in
+      continue;
+    } else if(all_nbr_inds(0) == -1 & cat_inds_no_index(0) == -1){ // if no neighbors, certainly no set difference
+      new_nbrs[index(0)] = -1;
+    } else if(all_nbr_inds(0) == -1 & cat_inds_no_index(0) != -1){
+      new_nbrs[index(0)] = sort_unique(cat_inds_no_index);
+    } else if(all_nbr_inds(0) != -1){
+      new_nbrs[index(0)] = sort_unique(union_(all_nbr_inds, cat_inds_no_index));
+    }
+ 
+    
+  }
+  
+  return new_nbrs;
+  
+}
+
 
 // You can include R code blocks in C++ files processed with sourceCpp
 // (useful for testing and development). The R code will be automatically 
@@ -186,5 +305,9 @@ prob_inf <- rep(1, N)
 prob_rec <- rep(1, N)
 out <- AMTime_SIR(A[1,], prob_inf, prob_rec)
 out
+
+a <- 1
+b <- 1
+setdiff(a, b)
 */
 

@@ -21,6 +21,18 @@ removeNeighbors <- function(orig_nbrs, preventions_nbrs, inf_inds, preventions_i
     .Call(`_Catalyst_removeNeighbors`, orig_nbrs, preventions_nbrs, inf_inds, preventions_inds)
 }
 
+rcppRev <- function(x) {
+    .Call(`_Catalyst_rcppRev`, x)
+}
+
+removeClosureNbrs <- function(nbr_list, cat_inds) {
+    .Call(`_Catalyst_removeClosureNbrs`, nbr_list, cat_inds)
+}
+
+addClosureNbrs <- function(nbr_list, cat_inds) {
+    .Call(`_Catalyst_addClosureNbrs`, nbr_list, cat_inds)
+}
+
 rcpp_hello <- function() {
     .Call(`_Catalyst_rcpp_hello`)
 }
