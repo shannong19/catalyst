@@ -96,7 +96,22 @@ plot_epidemic_summary <- function(sims_list, N,
                                   many_groups = FALSE,
                                   cols = "black",
                                   type_name = "Type",
-                                  labs = NULL){
+                                  labs = NULL,
+                                  xmin = 0,
+                                  xmax = 80,
+                                  y1min = -25,
+                                  y1max = 75,
+                                  y2min = -50,
+                                  y2max = 150,
+                                  y3min = -5,
+                                  y3max = 120,
+                                  lty = 0,
+                                  show_labels = FALSE,
+                                  alpha = .3,
+                                  do_facet = FALSE,
+                                  do_color_ramp = FALSE,
+                                  pal = "Greys",
+                                  legend_name = latex2exp::TeX("$\\rho$")){
 
     df <- summarize_epidemic(sims_list, N, summary_fxn)
 
@@ -106,9 +121,26 @@ plot_epidemic_summary <- function(sims_list, N,
                                   title,
                                   subtitle,
                                   type_name,
-                                  labs)
+                                  labs,
+                                  xmin = xmin,
+                                  xmax = xmax,
+                                  y1min = y1min,
+                                  y1max = y1max,
+                                  y2min = y2min,
+                                  y2max = y2max,
+                                  y3min = y3min,
+                                  y3max = y3max,
+                                  lty = lty,
+                                  show_labels = show_labels,
+                                  alpha = alpha,
+                                  do_facet = do_facet,
+                                  do_color_ramp = do_color_ramp,
+                                  pal = pal,
+                                  legend_name = legend_name)
    
-    return(list(g1 = plot_list$g1, g2 = plot_list$g2, df = df))
+    return(list(g1 = plot_list$g1, g2 = plot_list$g2,
+                g3 = plot_list$g3,
+                df = df))
 
     
 }
@@ -117,7 +149,7 @@ plot_epidemic_summary <- function(sims_list, N,
 #' 
 #' @param sims_list list of the "X" output from am_sir() function
 #' @param N total number of agents
-#' @return summary data frame with columns mean_* and var_* for ("max_I", "sum_I", and "max_t") and 95% CIs for each of these vars around the mean
+#' @return summary data frame with columns mean_* and var_* for ("max_I", "sum_I", and "max_t", "len_I") and 95% CIs for each of these vars around the mean
 summarize_epidemic <- function(sims_list, N, summary_fxn = "mean"){
 
     if(summary_fxn == "median"){
@@ -133,14 +165,18 @@ summarize_epidemic <- function(sims_list, N, summary_fxn = "mean"){
     } else {
         df <- X
     }
-
-    vars <- c("model", "ll")
-    vars2 <- c("model")
-    if("Type" %in% colnames(X)){
-        vars <- c(vars, "Type")
-        vars2 <- c(vars2, "Type")
+    if(!("color_ramp" %in% colnames(X))){
+        df$color_ramp <- 1
+    }
+    if(!("Type" %in% colnames(X))){
+        df$Type <- "Type"
+    } else {
         df$Type <- factor(df$Type)
     }
+
+
+    vars <- c("model", "ll", "color_ramp", "Type")
+    vars2 <- c("model", "color_ramp", "Type")
 
 
     
@@ -149,7 +185,9 @@ summarize_epidemic <- function(sims_list, N, summary_fxn = "mean"){
                           .fun = function(df){
                               c(max_I = max(df$I),
                                 sum_I = max(df$R),
-                                max_t = df$t[which.max(df$I)])
+                                max_t = df$t[which.max(df$I)],
+                                len_I = max(which(df$I >= 1))
+                                    )
                           })
     ave_sum_df <- plyr::ddply(sum_df, .var = vars2,
                               .fun = function(df){
@@ -158,7 +196,10 @@ summarize_epidemic <- function(sims_list, N, summary_fxn = "mean"){
                                     mean_sum_I = sum_fxn(df$sum_I),
                                     var_sum_I = var(df$sum_I),
                                     mean_max_t = sum_fxn(df$max_t),
-                                    var_max_t = var(df$max_t))
+                                    var_max_t = var(df$max_t),
+                                    mean_len_I = sum_fxn(df$len_I),
+                                    var_len_I = var(df$len_I)
+                                    )
                               }) 
     ave_sum_df$tmin <-  (ave_sum_df$mean_max_t -
                          2 * sqrt(ave_sum_df$var_max_t))
@@ -172,6 +213,10 @@ summarize_epidemic <- function(sims_list, N, summary_fxn = "mean"){
                             2 * sqrt(ave_sum_df$var_sum_I) / N * 100)
     ave_sum_df$sumImax <-  (ave_sum_df$mean_sum_I / N * 100 +
                             2 * sqrt(ave_sum_df$var_sum_I) / N * 100)
+    ave_sum_df$lenImin <-  (ave_sum_df$mean_len_I / N * 100 -
+                            2 * sqrt(ave_sum_df$var_len_I) / N * 100)
+    ave_sum_df$lenImax <-  (ave_sum_df$mean_len_I  +
+                            2 * sqrt(ave_sum_df$var_len_I) )
     return(ave_sum_df)
 
 
@@ -182,43 +227,87 @@ plot_epidemic_df <- function(df, N, many_groups, cols = "black",
                              title,
                              subtitle,
                              type_name = "Type",
-                             labs = NULL){
+                             labs = NULL,
+                             xmin = 0,
+                             xmax = 80,
+                             y1min = -50,
+                             y1max = 100,
+                             y2min = -25,
+                             y2max = 150,
+                             y3min = -5,
+                             y3max = 120,
+                             lty = 1,
+                             show_labels = FALSE,
+                             alpha = .3,
+                             do_facet = FALSE,
+                             do_color_ramp = FALSE,
+                             pal = "Greys",
+                             legend_name = latex2exp::TeX("$\\rho$")
+                             ){
 
+
+
+  
     col_guide <- NULL
     if(!many_groups){
            df$Type <- "Model"
            col_guide <- FALSE
-       }
+           if(!("color_ramp" %in%colnames(df))){
+               df$color_ramp <- df$Type
+           }
+           } else{
+               if(!("color_ramp" %in% colnames(df))){
+                   df$color_ramp <- df$Type
+               }
+    }
 
     if(is.null(labs)){
         labs <- unique(df$Type)
     }
+    if(do_color_ramp){
+        df$color_ramp <- as.numeric(as.character(df$model))
+    }
 
+    browser()
      g1 <- ggplot2::ggplot(data = df,
                           ggplot2::aes(x = mean_max_I / N * 100,
                                        y = mean_max_t,
-                                       group = Type,
-                                       col = Type,
+                                       group = color_ramp,
+                                       col = color_ramp,
 ##                                       shape = Type,
                                        x0 = mean_max_I / N * 100,
                                        y0 = mean_max_t,
                                        a = 2 * sqrt(var_max_I) / N * 100,
                                        b = 2 * sqrt(var_max_t),
                                        angle = 0,
-                                       fill = Type)) +
+                                       fill = color_ramp)) +
         ggplot2::geom_point(size = 2) + my_theme() +
-  #      ggplot2::geom_text(ggplot2::aes(label = model), nudge_x = -2 / N * 100,
-  #                         nudge_y = 2, show_guide = FALSE) +
         ggplot2::labs(x = "Peak % infectious over all days",
              y = "Day of peak % infectious",
              title = title,
              subtitle = subtitle) +
-        ggplot2::scale_color_manual(values = cols, name = type_name, labels = labs) +
-        ggplot2::scale_fill_manual(values = cols, name = type_name, labels = labs) + 
         ggplot2::guides(color = col_guide, shape = col_guide, fill = col_guide) +
-        ggforce::geom_ellipse(alpha = .1,  size  =1, linetype = 1) +
-        ggplot2::ylim(-30, 60) +
-        ggplot2::xlim(-15, 80) 
+        ggforce::geom_ellipse(alpha = alpha,  size  =1, linetype = lty) +
+        ggplot2::ylim(y1min, y1max) +
+        ggplot2::xlim(xmin, xmax)
+    if(show_labels){
+        g1 <-  g1 + ggplot2::geom_text(ggplot2::aes(label = model), nudge_x = -3 / N * 100,
+                                       nudge_y = 5, show_legend = FALSE) 
+    }
+    if(do_facet){
+        g1 <- g1 + ggplot2::facet_wrap(~Type)
+    }
+
+    if(do_color_ramp){
+        g1 <-  g1 +  ggplot2::scale_color_distiller(legend_name,
+                                                    palette = pal, direction  =1 ) +
+            ggplot2::scale_fill_distiller(legend_name, palette = pal, direction = 1 ) 
+            
+    } else{
+        g1 <- g1 +  ggplot2::scale_color_manual(values = cols, name = type_name, labels = labs) +
+            ggplot2::scale_fill_manual(values = cols, name = type_name, labels = labs) 
+    }
+
         
         ## ggplot2::geom_errorbar(ggplot2::aes(ymin = tmin,
         ##                                     ymax = tmax)) +
@@ -230,33 +319,87 @@ plot_epidemic_df <- function(df, N, many_groups, cols = "black",
     g2 <- ggplot2::ggplot(data = df,
                           ggplot2::aes(x = mean_max_I / N * 100,
                                        y = mean_sum_I / N * 100,
-                                       group = Type,
-                                       col = Type,
+                                       group = color_ramp,
+                                       col = color_ramp,
                                     #   shape = Type,
                                        x0 = mean_max_I / N * 100,
                                        y0 = mean_sum_I / N * 100,
                                        a = 2 * sqrt(var_max_I) / N * 100,
                                        b = 2 * sqrt(var_sum_I) / N * 100,
                                        angle = 0,
-                                       fill = Type)) +
+                                       fill = color_ramp)) +
         ggplot2::geom_point(size = 2) + my_theme() +
-   ##     ggplot2::geom_text(ggplot2::aes(label = model), nudge_x = -2 / N * 100,
-     ##                      nudge_y = 2) +
         ggplot2::labs(x = "Peak % infectious over all days",
              y = "Final size (%)",
              title = title,
              subtitle = subtitle) +
-        ggplot2::scale_color_manual(values = cols, name = type_name, labels = labs) +
-        ggplot2::scale_fill_manual(values = cols, name = type_name, labels = labs) +
-        ggplot2::ylim(-50,150) +
-        ggplot2::xlim(-15, 80) + 
+        ggplot2::ylim(y2min, y2max) +
+        ggplot2::xlim(xmin, xmax) + 
         ## ggplot2::geom_errorbar(ggplot2::aes(ymin = sumImin,
         ##                                     ymax = sumImax)) +
         ## ggplot2::geom_errorbarh(ggplot2::aes(xmin = Imin,
         ##                                      xmax = Imax)) +
         ggplot2::guides(color = col_guide, shape = col_guide, fill = col_guide) +
-        ggforce::geom_ellipse(alpha = .1, size  =1)
+        ggforce::geom_ellipse(alpha = alpha, size  =1, linetype = lty)
+    if(show_labels){
+        g2 <- g2 + ggplot2::geom_text(ggplot2::aes(label = model), nudge_x = -3/ N * 100,
+                                      nudge_y = 5)
+    }
+    if(do_facet){
+        g2 <- g2 + ggplot2::facet_wrap(~Type)
+    }
 
-    gridExtra::grid.arrange(g1, g2, nrow = 2)
-    return(list(g1 = g1, g2 = g2))
+    if(do_color_ramp){
+        g2 <-  g2 +  ggplot2::scale_color_distiller(legend_name, palette = pal, direction  = 1) +
+            ggplot2::scale_fill_distiller(legend_name, palette = pal, direction  = 1) 
+    } else{
+        g2 <- g2 +  ggplot2::scale_color_manual(values = cols, name = type_name, labels = labs) + 
+            ggplot2::scale_fill_manual(values = cols, name = type_name, labels = labs) 
+    }
+################################################################3
+    ## Plot length I vs max I
+    g3 <- ggplot2::ggplot(data = df,
+                          ggplot2::aes(x = mean_max_I / N * 100,
+                                       y = mean_len_I ,
+                                       group = color_ramp,
+                                       col = color_ramp,
+                                    #   shape = Type,
+                                       x0 = mean_max_I / N * 100,
+                                       y0 = mean_len_I ,
+                                       a = 2 * sqrt(var_max_I) / N * 100,
+                                       b = 2 * sqrt(var_len_I),
+                                       angle = 0,
+                                       fill = color_ramp)) +
+        ggplot2::geom_point(size = 2) + my_theme() +
+        ggplot2::labs(x = "Peak % infectious over all days",
+             y = "Infection duration",
+             title = title,
+             subtitle = subtitle) +
+        ggplot2::ylim(y3min, y3max) +
+        ggplot2::xlim(xmin, xmax) + 
+        ## ggplot2::geom_errorbar(ggplot2::aes(ymin = sumImin,
+        ##                                     ymax = sumImax)) +
+        ## ggplot2::geom_errorbarh(ggplot2::aes(xmin = Imin,
+        ##                                      xmax = Imax)) +
+        ggplot2::guides(color = col_guide, shape = col_guide, fill = col_guide) +
+        ggforce::geom_ellipse(alpha = alpha, size  =1, linetype = lty)
+    if(show_labels){
+        g3 <- g3 + ggplot2::geom_text(ggplot2::aes(label = model), nudge_x = -3/ N * 100,
+                                      nudge_y = 5)
+    }
+    if(do_facet){
+        g3 <- g3 + ggplot2::facet_wrap(~Type)
+    }
+
+    if(do_color_ramp){
+        g3 <-  g3 +  ggplot2::scale_color_distiller(legend_name, palette = pal, direction  = 1) +
+            ggplot2::scale_fill_distiller(legend_name, palette = pal, direction  = 1) 
+    } else{
+        g2 <- g3 +  ggplot2::scale_color_manual(values = cols, name = type_name, labels = labs) + 
+            ggplot2::scale_fill_manual(values = cols, name = type_name, labels = labs) 
+    }
+
+
+    gridExtra::grid.arrange(g1, g2, g3, nrow = 3)
+    return(list(g1 = g1, g2 = g2, g3 = g3))
 }

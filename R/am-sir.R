@@ -33,7 +33,9 @@
 #' @param closure_max_T list of length closure_vars where each entry of the list is the max time we will close the structure
 #' @return list of X a Tx3 matrix of number of S, I, and R at each time step;  A a TxN matrix of each agents state at each path or NULL if keep_A is FALSE
 am_sir <- function(L, T,
-                   A0, prob_fxn = "KM",
+                   A0,
+                   G = 1,
+                   prob_fxn = "KM",
                    par1_vec, gamma_vec,
                    nbr_list = NULL,
                    use_exp_X = TRUE,
@@ -53,7 +55,8 @@ am_sir <- function(L, T,
                    closure_vars = NULL,
                    closure_inds_list = NULL,
                    closure_time = list(0),
-                   closure_max_T = list(1)
+                   closure_max_T = list(1),
+                   X0 = NULL
                    ){
 
 
@@ -65,9 +68,14 @@ am_sir <- function(L, T,
     
 
     if(use_exp_X){
-      pf <- ifelse(prob_fxn == "KM", 0, 1)
-      X0 <- AtoX(A[1,, drop = FALSE], 3)
-      X_theor <- sirLoop(X0, par1_vec[1], gamma_vec[1], T, pf)
+       pf <- ifelse(prob_fxn == "KM", 0, 1)
+       if(is.null(X0)){
+           X0 <- AtoX(A[1,, drop = FALSE], 3 * G)
+       }
+       beta <- unique(par1_vec)
+       gamma <- unique(gamma_vec)
+       X_out<- sirLoopGroups(X0, beta, gamma, T, pf)  # generalization of sirLoop
+       X_theor <- totalX(X_out)
     } else{
         X_theor <- NULL
     }
@@ -218,7 +226,6 @@ am_sir_one_sim <- function(ll = 1, A, prob_fxn = "KM",
         ##  print(paste("inf inds:", inf_inds))
         ## Isolation and quarantine
         if(do_preventions){
-            browser()
             preventions_list <- update_preventions(nbr_list,
                                preventions_nbrs,
                                preventions_inds,

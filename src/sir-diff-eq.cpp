@@ -13,7 +13,7 @@ using namespace Rcpp;
 
 
 
-// Calculate the SIR  diff eqs for G groups
+// Calculate the SIR  diff eqs for G groups that interact homogeneously
 // 
 // @param x initial values, first G are initial S, second G are initial I, and third G are initial R
 // @param beta_vec vector of length G, values between 0 and 1
@@ -66,7 +66,34 @@ NumericMatrix sirLoopGroups(NumericVector x, NumericVector beta_vec,
 }
 
 
+// Turn groups of SIR into total SIR
+// 
+// @param X matrix of Tx(3G).  first G  columns are initial S, second G are initial I, and third G are initial R
+// @return matrix Tx(3)
+// [[Rcpp::export]]
+NumericMatrix totalX(NumericMatrix X){
+  int T = X.nrow();
+  int G = X.ncol() / 3;
+  NumericMatrix newX(T, 3);
+  for(int ii=0; ii < T; ii++){
+    for(int jj=0; jj < G; jj++){
+      newX(ii, 0) = 0;
+      newX(ii, 1) = 0;
+      newX(ii, 2) = 0;
+    }
+    
+  }
+  for(int ii=0; ii < T; ii++){
+    for(int jj=0; jj < G; jj++){
+      newX(ii, 0) =  newX(ii,0) + X(ii, jj);
+      newX(ii, 1) = newX(ii, 1) + X(ii, G + jj );
+      newX(ii, 2) = newX(ii,2) + X(ii, 2 * G + jj);
+    }
+    
+  }
 
+  return newX;
+}
 
 
 
