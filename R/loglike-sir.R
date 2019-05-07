@@ -245,9 +245,9 @@ split_U <- function(U, tmin = 0, tmax){
     ## either initially susceptible and last day infected between tmin and tmax OR
     ## initially infected and last time infected is minimum tmin
     inds <- which((U[1,] == 0 & tmin <= U[2, ] & U[2, ] <= tmax) |
-                  U[1, ] == 1 & tmin <= U[3,])
+                  U[1, ] == 1 & tmin == 0)
     new_U <- U[, inds]
-    new_U[1, ] <- ifelse(new_U[2,] <= tmin, 1, new_U[1,])
+    new_U[1, ] <- ifelse(new_U[2,] <= tmin, 1, new_U[1,]) # if last day susceptible is 
     new_U[2, ] <- ifelse(new_U[2,] <= tmin, tmax - tmin, new_U[2,] - tmin)
     new_U[3, ] <- ifelse(new_U[3,] <= tmin, tmax - tmin, new_U[3,] - tmin)
     return(new_U)

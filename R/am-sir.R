@@ -60,7 +60,7 @@ am_sir <- function(L, T,
                    ){
 
 
-    print(paste("delay:", preventions_delay))
+##    print(paste("delay:", preventions_delay))
     ## Initialize
     N <- length(A0)
     A <- matrix(0, nrow = T, ncol = N)
@@ -96,7 +96,7 @@ am_sir <- function(L, T,
 
         for(ll in 1:L){
 
-            if((ll %% 100) == 0){
+            if((ll %% 1000) == 0){
                 print(ll)
             }
             out <- am_sir_one_sim(ll = ll,

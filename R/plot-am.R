@@ -171,7 +171,9 @@ summarize_epidemic <- function(sims_list, N, summary_fxn = "mean"){
     if(!("Type" %in% colnames(X))){
         df$Type <- "Type"
     } else {
-        df$Type <- factor(df$Type)
+        if(class(df$Type) != "factor"){
+            df$Type <- factor(df$Type)
+        }
     }
 
 
@@ -268,7 +270,6 @@ plot_epidemic_df <- function(df, N, many_groups, cols = "black",
         df$color_ramp <- as.numeric(as.character(df$model))
     }
 
-    browser()
      g1 <- ggplot2::ggplot(data = df,
                           ggplot2::aes(x = mean_max_I / N * 100,
                                        y = mean_max_t,
