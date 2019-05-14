@@ -23,7 +23,9 @@ plot_ests <- function(obs, ests, plot_type = "state",
                       pretty = TRUE,
                       model_names = c("Observed", "Model 1", "Model 2"),
                       subtitle = "",
-                      n_obs = 10
+                      n_obs = 10,
+                      free_scales = FALSE,
+                      obs_size = 1
                       ){
 
     ## format obs
@@ -39,7 +41,7 @@ plot_ests <- function(obs, ests, plot_type = "state",
 
     if(plot_type == "state"){
       
-        g <- plot_ests.state(df)
+        g <- plot_ests.state(df, free_scales = free_scales, obs_size = obs_size)
         g <- g + ggplot2::labs(x = xlab, y = ylab,
                                title = title,
                                subtitle = subtitle) +
@@ -305,10 +307,12 @@ format_obs <- function(obs, plot_type, CI){
 #' @param df data frame with columns "t", "obs", "state" (one of "S", "I", or "R"), "mean", and optionally "var",  along with "data_type"
 #' @param pretty logical.  Default is TRUE
 #' @return ggplot
-plot_ests.state <- function(df, pretty = TRUE){
+plot_ests.state <- function(df, pretty = TRUE, free_scales = FALSE,
+                            obs_size = obs_size){
+    scale_arg <- ifelse(free_scales, "free_y", "fixed")
     g <- ggplot2::ggplot(data = df,
                          ggplot2::aes(x= t, group = data_type)) +
-        ggplot2::facet_wrap(~state, nrow = 3) 
+        ggplot2::facet_wrap(~state, nrow = 3, scales = scale_arg) 
       
     if("var" %in% colnames(df)){
         g <- g +
@@ -324,7 +328,7 @@ plot_ests.state <- function(df, pretty = TRUE){
                                              linetype = 1, size = 2) +
         ggplot2:: geom_point(ggplot2::aes(y = obs,
                                           col = factor(data_type)),
-                             col = "black", size = 2)
+                             col = "black", size = obs_size)
 
     return(g)
     

@@ -1,0 +1,15 @@
+context("Testing CM-SIR functions")
+
+test_that("update X", {
+    X0 <- c(9, 1, 0)
+    beta <- .1
+    gamma <- .3
+    inf_prob <- c(0, 0, 1)
+    T <- 4
+    t0 <- 0
+    ll <- 1
+    out <- update_X(X0, beta, gamma, inf_prob, t0, T, ll)
+    
+
+
+})

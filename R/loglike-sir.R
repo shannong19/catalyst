@@ -282,7 +282,7 @@ combine_sims_X <- function(sims_X_list, N){
     unique_sims <- sort(unique(do.call('c', lapply(sims_X_list, function(df) df$ll))))
     grid <- expand.grid(t = unique_times, ll = unique_sims)
     joined_list <- lapply(sims_X_list, function(df){
-        new_X <- plyr::join(grid, df)
+        new_X <- plyr::join(grid, df, by = c("t", "ll"))
         new_X$S <- ifelse(is.na(new_X$S), 0, new_X$S)
         new_X$I <- ifelse(is.na(new_X$I), 0, new_X$I)
         new_X$R <- ifelse(is.na(new_X$R), 0, new_X$R)
