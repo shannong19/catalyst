@@ -88,5 +88,29 @@ test_that("cm_sir", {
                   do_par = FALSE,
                   t0 = 0,
                   interaction_type = "heterog")
+    expect_equal(dim(out[[1]]), c(T * L, 5))
+
+    ## MULTIPLE groups
+    L <- 100
+    X0_vec <- c(950, 49, 0, 0, 1, 0)
+    par_vec <- c(.1, .03, .25, .2)
+    T <- 100
+    times_vec <- c(10, T)
+    out <- cm_sir(L = L, T = T,
+                  X0_vec = X0_vec,
+                  par_vec = par_vec,
+                  times_vec = times_vec,
+                  prob_fxn = "KM",
+                  use_exp_X = TRUE,
+                  do_par = FALSE,
+                  t0 = 0,
+                  interaction_type = "heterog")
+    out2 <- am_plot_mean_var(X = out$X, obs = NULL,
+                            plot_var = TRUE,
+                            cols = c("black", "blue"),
+                            title = "woo")
+
+
 
 })
+head(out2$plot_df)

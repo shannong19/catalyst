@@ -31,7 +31,6 @@ cm_sir <- function(L, T,
     if(interaction_type == "heterog"){
         G <- length(times_vec)
         sims_X <- vector(mode = "list", length = L)
-        N <- sum(X0_vec) / 3
         for(ll in 1:L){
             X_list <- vector(mode = "list", length = G)
             for(gg in 1:G){
@@ -48,11 +47,11 @@ cm_sir <- function(L, T,
                 inf_prob <- get_CM_prob_inf(X0, beta, gamma,  prob_fxn,
                                             use_exp_X, T - tstar)
 
-                X_mat <- update_X(X0, beta, gamma, inf_prob, tstar, T, ll)
+                X_mat <- update_X(X0, beta, gamma, inf_prob, tstar, T, ll, gg)
                 X_list[[gg]] <- X_mat
             }
 
-            X <- combine_sims_X(X_list, N)
+            X <- combine_sims_X(X_list, N = sum(X0_vec))
             sims_X[[ll]] <- X
         }
         out <- do.call('rbind', sims_X)
@@ -106,13 +105,14 @@ get_CM_prob_inf <- function(X0, beta, gamma, prob_fxn,
 #' @param t0 time we start at
 #' @param T T-1 is the last time
 #' @param ll simulation number
+#' @param gg group number
 #' @return X matrix with columns t, S, I, R, ll nrow is T-1
-update_X <- function(X0, beta, gamma, inf_prob, t0, T, ll){
+update_X <- function(X0, beta, gamma, inf_prob, t0, T, ll, gg){
 
-    X <- matrix(0, nrow = T - t0, ncol = 5)
+    X <- matrix(0, nrow = T - t0, ncol = 6)
     N <- sum(X0)
-    X[1,] <- c(t0, X0, ll)
-    colnames(X) <- c("t", "S", "I", "R", "ll")
+    X[1,] <- c(t0, X0, ll, gg)
+    colnames(X) <- c("t", "S", "I", "R", "ll", "g")
     for(tt in 1:(T-t0 - 1)){
         if(is.null(inf_prob)){
             ## Use actual X values to get inf_prob
@@ -126,6 +126,7 @@ update_X <- function(X0, beta, gamma, inf_prob, t0, T, ll){
         X[tt + 1, 3] <- N - X[tt + 1, 2] - X[tt + 1, 4]
     }
     X[, 5] <- ll
+    X[,6] <- gg
     return(X)
 
 }

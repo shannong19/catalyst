@@ -3,7 +3,7 @@
 ## March 6, 2019 Ash Wednesday.  Truly this is penance
 
 
-#' Plot the observed
+#' Plot the estimates and observed data
 #'
 #' @param obs data frame with t, S, I, and R columns (as percents out of total population N)
 #' @param ests data frame with t, S_mean, I_mean, and R_mean columns along with est_type, and optionally S_var, I_var, R_var (as percents out of total population N)

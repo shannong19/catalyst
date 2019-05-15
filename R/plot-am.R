@@ -49,7 +49,7 @@ am_plot_mean_var <- function(X, obs = NULL,
                                     name = color_guide_name, labels = labs) +
         ggplot2::scale_fill_manual(values = cols[1:n_models],  guide = FALSE) +
         my_theme() +
-        ggplot2::facet_wrap(~variable, nrow = 3)
+        ggplot2::facet_wrap(~variable, nrow = 3, scales = "free_y")
     if(plot_var){
         g <- g + 
             ggplot2::geom_ribbon(data = df, ggplot2::aes(x = t, group = factor(model),

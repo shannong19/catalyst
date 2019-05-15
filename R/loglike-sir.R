@@ -272,6 +272,7 @@ udpate_A0 <- function(A0, Smax, tmin, tmax){
 #' @param N total number of agents
 #' @return a data frame where we add the corresponding states together
 combine_sims_X <- function(sims_X_list, N){
+
     sims_X_list <- lapply(sims_X_list, function(df){
         if(class(df) != "data.frame"){
             df <- as.data.frame(df)
