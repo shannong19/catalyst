@@ -72,7 +72,7 @@ plot_ests <- function(obs, ests, plot_type = "state",
                  
         
     } else if(plot_type == "ternary"){
-        g <- plot_ests.ternary(df, n_obs = n_obs)
+        g <- plot_ests.ternary(df, n_obs = n_obs, obs_size = obs_size)
         cols <- c(NA, model_cols[-1])
         g <- g +  ggplot2::labs(title = title,
                                subtitle = subtitle) +
@@ -376,40 +376,43 @@ plot_ests.loglinear <- function(df, pretty = TRUE){
 #' @param pretty logical.  Default is TRUE
 #' @param number of dates to plot
 #' @return ggplot
-plot_ests.ternary <- function(df, pretty = TRUE, n_obs = 10){
+plot_ests.ternary <- function(df, pretty = TRUE, n_obs = 10, obs_size = 1){
 
     df$id <- ifelse(df$t %% n_obs == 0, df$t / n_obs + 1, 0)
     df$plot_point <- ifelse(df$t %% n_obs == 0, 1,
                      ifelse(as.numeric(as.character(df$data_type)) > 0, NA,
                             1))
     df$obs <- ifelse(df$data_type == 0, "obs", "est")
+    df$size <- ifelse(df$t %% n_obs == 0, 3, obs_size)
     pal <- c("black", RColorBrewer::brewer.pal(n = max(df$id, na.rm = TRUE),
                                                "Paired"))
     g <- ggtern::ggtern()
-    g <- g + ggplot2::geom_path(data = df,
-                                ggtern::aes(S_mean, I_mean, R_mean, group = factor(data_type),
-                                            color = factor(data_type)), size = 1, alpha = .8) +
+    g <- g +
+        ggplot2::geom_path(data = df,
+                           ggtern::aes(S_mean, I_mean, R_mean, group = factor(data_type),
+                                       color = factor(data_type)), size = 2, alpha = .7)  + 
         ggplot2::geom_point(data = df,
                             ggtern::aes(S_mean, I_mean, R_mean * plot_point,
-                                        fill = factor(id), shape = obs), size = 3)
+                                        fill = factor(id), shape = obs, size = size))
     g <-  g +  ggtern::theme_hideticks() + ggtern::theme_showarrows() + 
-    ggtern::theme(tern.axis.text = ggplot2::element_text(size = 25,
-                                        family = "Palatino"),
-          text = ggplot2::element_text(size = 25,
-                                       family = "Palatino"),
-          axis.title = ggplot2::element_blank()) + 
-    ggtern::Tarrowlab("I") +
-    ggtern::Larrowlab("S") +
-    ggtern::Rarrowlab("R") +
-    ggplot2::scale_shape_manual(name = "Data", values = c(24, 21), labels = c("Est.", "Obs.")) + 
-    ggplot2::scale_fill_manual(name = "Time",
-                      labels = c("Day",
-                                 paste("Day",
-                                       (n_obs) * (0:(max(df$id, na.rm = TRUE)-1)) + min(df$t))
-                                 ),
-                      values = pal) +
-    ggplot2::labs(L = "", T = "", R = "") +
-    ggplot2::guides(fill = ggplot2::guide_legend(override.aes = list(shape = 21))) 
+        ggtern::theme(tern.axis.text = ggplot2::element_text(size = 25,
+                                                             family = "Palatino"),
+                      text = ggplot2::element_text(size = 25,
+                                                   family = "Palatino"),
+                      axis.title = ggplot2::element_blank()) + 
+        ggtern::Tarrowlab("I") +
+        ggtern::Larrowlab("S") +
+        ggtern::Rarrowlab("R") +
+        ggplot2::scale_shape_manual(name = "Data", values = c(24, 21), labels = c("Est.", "Obs.")) + 
+        ggplot2::scale_fill_manual(name = "Time",
+                                   labels = c("Day",
+                                              paste("Day",
+                                              (n_obs) * (0:(max(df$id, na.rm = TRUE)-1)) + min(df$t))
+                                              ),
+                                   values = pal) +
+        ggplot2::labs(L = "", T = "", R = "") +
+        ggplot2::scale_size_continuous(guide = FALSE) + 
+        ggplot2::guides(fill = ggplot2::guide_legend(override.aes = list(shape = 21, size = 3))) 
 
 ##    print(g)
       
