@@ -1,0 +1,11 @@
+## From http://www.guru-gis.net/fast-euclidean-distance-function/
+
+
+#' Calculate Euclidean distance
+#'
+#' @param m Matrix
+euc_dist <- function(m){
+    mtm <- Matrix::tcrossprod(m)
+    sq <- rowSums(m*m)
+    sqrt(outer(sq,sq,"+") - 2*mtm)
+} 

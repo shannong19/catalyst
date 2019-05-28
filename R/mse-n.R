@@ -12,12 +12,13 @@
 #' @param t0 initial time start
 #' @param T final time
 #' @param prob_type 1 for KM 0 for RF
+#' @param N default is NULL, meaning we will estimate N.  Otherwise, we use the N provided
 #' return mean sum of square errors (averaged over time points)
-mse_bgn <- function(pars, obs, t0 = 0, T = 100, prob_type = 1){
+mse_bgn <- function(pars, obs, t0 = 0, T = 100, prob_type = 1, N = NULL){
     ## Get beta, gamma, N
     beta <- pars[1]
     gamma <- pars[2]
-    N <- round(pars[3] *  10^5)
+    if(is.null(N)) N <- round(pars[3] *  10^5)
     ## Subset the observations to the proper time
     sub_inds <- which(obs$t >= t0 & obs$t < T)
     sub_obs <- obs[sub_inds,]
@@ -56,5 +57,24 @@ rescale_SIR <- function(obs, raw){
                               (obs[,ii] - min_raw) / (max_raw - min_raw)
                           }))
     return(out)
+
+}
+
+#' Calculate R0 from delta method
+#'
+#' @param mu vector (beta, gamma)
+#' @param variance matrix of beta, gamma
+#' @param T total time steps
+#' @return variance of r0
+r0_var <- function(mu, sigma, T){
+    ##
+    beta <- mu[1]
+    gamma <- mu[2]
+    sbb <- sigma[1,1]
+    sgg <- sigma[2,2]
+    sbg <- sigma[1,2]
+    ##
+    var <- 1 / T * (sbb/gamma^2 - sbg * (1 + beta) / gamma^3 + beta * sgg / gamma^4)
+    return(var)
 
 }

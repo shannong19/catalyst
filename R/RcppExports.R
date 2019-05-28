@@ -33,6 +33,22 @@ addClosureNbrs <- function(nbr_list, cat_inds) {
     .Call(`_Catalyst_addClosureNbrs`, nbr_list, cat_inds)
 }
 
+deg_to_rad_rcpp <- function(degree) {
+    .Call(`_Catalyst_deg_to_rad_rcpp`, degree)
+}
+
+dist_haversine_rcpp <- function(xlon, xlat, ylon, ylat) {
+    .Call(`_Catalyst_dist_haversine_rcpp`, xlon, xlat, ylon, ylat)
+}
+
+nbrsByDist <- function(M, thresh, max_nbrs) {
+    .Call(`_Catalyst_nbrsByDist`, M, thresh, max_nbrs)
+}
+
+AMSIR <- function(ll, T, A0, nbrList, beta, gamma) {
+    .Call(`_Catalyst_AMSIR`, ll, T, A0, nbrList, beta, gamma)
+}
+
 rcpp_hello <- function() {
     .Call(`_Catalyst_rcpp_hello`)
 }

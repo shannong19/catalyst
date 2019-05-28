@@ -1,0 +1,8 @@
+context("testing Rcpp functions for haversine distance")
+
+
+test_that("nbrsByDist", {
+
+
+
+    })

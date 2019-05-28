@@ -104,6 +104,60 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// deg_to_rad_rcpp
+double deg_to_rad_rcpp(double degree);
+RcppExport SEXP _Catalyst_deg_to_rad_rcpp(SEXP degreeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type degree(degreeSEXP);
+    rcpp_result_gen = Rcpp::wrap(deg_to_rad_rcpp(degree));
+    return rcpp_result_gen;
+END_RCPP
+}
+// dist_haversine_rcpp
+double dist_haversine_rcpp(double xlon, double xlat, double ylon, double ylat);
+RcppExport SEXP _Catalyst_dist_haversine_rcpp(SEXP xlonSEXP, SEXP xlatSEXP, SEXP ylonSEXP, SEXP ylatSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type xlon(xlonSEXP);
+    Rcpp::traits::input_parameter< double >::type xlat(xlatSEXP);
+    Rcpp::traits::input_parameter< double >::type ylon(ylonSEXP);
+    Rcpp::traits::input_parameter< double >::type ylat(ylatSEXP);
+    rcpp_result_gen = Rcpp::wrap(dist_haversine_rcpp(xlon, xlat, ylon, ylat));
+    return rcpp_result_gen;
+END_RCPP
+}
+// nbrsByDist
+List nbrsByDist(NumericMatrix M, double thresh, int max_nbrs);
+RcppExport SEXP _Catalyst_nbrsByDist(SEXP MSEXP, SEXP threshSEXP, SEXP max_nbrsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type M(MSEXP);
+    Rcpp::traits::input_parameter< double >::type thresh(threshSEXP);
+    Rcpp::traits::input_parameter< int >::type max_nbrs(max_nbrsSEXP);
+    rcpp_result_gen = Rcpp::wrap(nbrsByDist(M, thresh, max_nbrs));
+    return rcpp_result_gen;
+END_RCPP
+}
+// AMSIR
+IntegerMatrix AMSIR(int ll, int T, IntegerVector A0, List nbrList, double beta, double gamma);
+RcppExport SEXP _Catalyst_AMSIR(SEXP llSEXP, SEXP TSEXP, SEXP A0SEXP, SEXP nbrListSEXP, SEXP betaSEXP, SEXP gammaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type ll(llSEXP);
+    Rcpp::traits::input_parameter< int >::type T(TSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type A0(A0SEXP);
+    Rcpp::traits::input_parameter< List >::type nbrList(nbrListSEXP);
+    Rcpp::traits::input_parameter< double >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< double >::type gamma(gammaSEXP);
+    rcpp_result_gen = Rcpp::wrap(AMSIR(ll, T, A0, nbrList, beta, gamma));
+    return rcpp_result_gen;
+END_RCPP
+}
 // rcpp_hello
 List rcpp_hello();
 RcppExport SEXP _Catalyst_rcpp_hello() {
@@ -262,6 +316,10 @@ static const R_CallMethodDef CallEntries[] = {
     {"_Catalyst_rcppRev", (DL_FUNC) &_Catalyst_rcppRev, 1},
     {"_Catalyst_removeClosureNbrs", (DL_FUNC) &_Catalyst_removeClosureNbrs, 2},
     {"_Catalyst_addClosureNbrs", (DL_FUNC) &_Catalyst_addClosureNbrs, 2},
+    {"_Catalyst_deg_to_rad_rcpp", (DL_FUNC) &_Catalyst_deg_to_rad_rcpp, 1},
+    {"_Catalyst_dist_haversine_rcpp", (DL_FUNC) &_Catalyst_dist_haversine_rcpp, 4},
+    {"_Catalyst_nbrsByDist", (DL_FUNC) &_Catalyst_nbrsByDist, 3},
+    {"_Catalyst_AMSIR", (DL_FUNC) &_Catalyst_AMSIR, 6},
     {"_Catalyst_rcpp_hello", (DL_FUNC) &_Catalyst_rcpp_hello, 0},
     {"_Catalyst_sirLoopGroups", (DL_FUNC) &_Catalyst_sirLoopGroups, 5},
     {"_Catalyst_totalX", (DL_FUNC) &_Catalyst_totalX, 1},

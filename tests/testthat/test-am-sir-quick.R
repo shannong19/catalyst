@@ -1,0 +1,21 @@
+context("quick")
+
+test_that("quick am sir",{
+
+    devtools::load_all("~/catalyst")
+    
+
+    a0 <- c(0, 1, 1)
+    ll <- 1
+    T <- 50
+    nbr_list = list(-1)
+    beta <- .15
+    gamma <- .12
+
+    out <- AMSIR_inf_inner(ll, T, a0,
+                 nbr_list, beta, gamma)
+
+    ## test the quick and dirty AM, looping over infectious
+
+}
+)
