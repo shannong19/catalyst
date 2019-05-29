@@ -142,9 +142,82 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// AMSIR
-IntegerMatrix AMSIR(int ll, int T, IntegerVector A0, List nbrList, double beta, double gamma);
-RcppExport SEXP _Catalyst_AMSIR(SEXP llSEXP, SEXP TSEXP, SEXP A0SEXP, SEXP nbrListSEXP, SEXP betaSEXP, SEXP gammaSEXP) {
+// findIfSus
+int findIfSus(int A0, int IMax, int T);
+RcppExport SEXP _Catalyst_findIfSus(SEXP A0SEXP, SEXP IMaxSEXP, SEXP TSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type A0(A0SEXP);
+    Rcpp::traits::input_parameter< int >::type IMax(IMaxSEXP);
+    Rcpp::traits::input_parameter< int >::type T(TSEXP);
+    rcpp_result_gen = Rcpp::wrap(findIfSus(A0, IMax, T));
+    return rcpp_result_gen;
+END_RCPP
+}
+// makeStateVec
+IntegerVector makeStateVec(IntegerVector A0, int state);
+RcppExport SEXP _Catalyst_makeStateVec(SEXP A0SEXP, SEXP stateSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerVector >::type A0(A0SEXP);
+    Rcpp::traits::input_parameter< int >::type state(stateSEXP);
+    rcpp_result_gen = Rcpp::wrap(makeStateVec(A0, state));
+    return rcpp_result_gen;
+END_RCPP
+}
+// whichState
+IntegerVector whichState(IntegerVector x, int state);
+RcppExport SEXP _Catalyst_whichState(SEXP xSEXP, SEXP stateSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< int >::type state(stateSEXP);
+    rcpp_result_gen = Rcpp::wrap(whichState(x, state));
+    return rcpp_result_gen;
+END_RCPP
+}
+// countIntersect
+int countIntersect(IntegerVector infVec, IntegerVector nbrOfSusInds);
+RcppExport SEXP _Catalyst_countIntersect(SEXP infVecSEXP, SEXP nbrOfSusIndsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerVector >::type infVec(infVecSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type nbrOfSusInds(nbrOfSusIndsSEXP);
+    rcpp_result_gen = Rcpp::wrap(countIntersect(infVec, nbrOfSusInds));
+    return rcpp_result_gen;
+END_RCPP
+}
+// updateStateByInds
+IntegerVector updateStateByInds(IntegerVector vec, IntegerVector inds);
+RcppExport SEXP _Catalyst_updateStateByInds(SEXP vecSEXP, SEXP indsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerVector >::type vec(vecSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type inds(indsSEXP);
+    rcpp_result_gen = Rcpp::wrap(updateStateByInds(vec, inds));
+    return rcpp_result_gen;
+END_RCPP
+}
+// updateStateVec
+IntegerVector updateStateVec(IntegerVector vec1, IntegerVector vec2);
+RcppExport SEXP _Catalyst_updateStateVec(SEXP vec1SEXP, SEXP vec2SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerVector >::type vec1(vec1SEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type vec2(vec2SEXP);
+    rcpp_result_gen = Rcpp::wrap(updateStateVec(vec1, vec2));
+    return rcpp_result_gen;
+END_RCPP
+}
+// AMSIR_sus_inner
+IntegerMatrix AMSIR_sus_inner(int ll, int T, IntegerVector A0, List nbrList, double beta, double gamma);
+RcppExport SEXP _Catalyst_AMSIR_sus_inner(SEXP llSEXP, SEXP TSEXP, SEXP A0SEXP, SEXP nbrListSEXP, SEXP betaSEXP, SEXP gammaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -154,7 +227,23 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< List >::type nbrList(nbrListSEXP);
     Rcpp::traits::input_parameter< double >::type beta(betaSEXP);
     Rcpp::traits::input_parameter< double >::type gamma(gammaSEXP);
-    rcpp_result_gen = Rcpp::wrap(AMSIR(ll, T, A0, nbrList, beta, gamma));
+    rcpp_result_gen = Rcpp::wrap(AMSIR_sus_inner(ll, T, A0, nbrList, beta, gamma));
+    return rcpp_result_gen;
+END_RCPP
+}
+// AMSIR
+List AMSIR(int L, int T, IntegerVector A0, List nbrList, double beta, double gamma);
+RcppExport SEXP _Catalyst_AMSIR(SEXP LSEXP, SEXP TSEXP, SEXP A0SEXP, SEXP nbrListSEXP, SEXP betaSEXP, SEXP gammaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type L(LSEXP);
+    Rcpp::traits::input_parameter< int >::type T(TSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type A0(A0SEXP);
+    Rcpp::traits::input_parameter< List >::type nbrList(nbrListSEXP);
+    Rcpp::traits::input_parameter< double >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< double >::type gamma(gammaSEXP);
+    rcpp_result_gen = Rcpp::wrap(AMSIR(L, T, A0, nbrList, beta, gamma));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -319,6 +408,13 @@ static const R_CallMethodDef CallEntries[] = {
     {"_Catalyst_deg_to_rad_rcpp", (DL_FUNC) &_Catalyst_deg_to_rad_rcpp, 1},
     {"_Catalyst_dist_haversine_rcpp", (DL_FUNC) &_Catalyst_dist_haversine_rcpp, 4},
     {"_Catalyst_nbrsByDist", (DL_FUNC) &_Catalyst_nbrsByDist, 3},
+    {"_Catalyst_findIfSus", (DL_FUNC) &_Catalyst_findIfSus, 3},
+    {"_Catalyst_makeStateVec", (DL_FUNC) &_Catalyst_makeStateVec, 2},
+    {"_Catalyst_whichState", (DL_FUNC) &_Catalyst_whichState, 2},
+    {"_Catalyst_countIntersect", (DL_FUNC) &_Catalyst_countIntersect, 2},
+    {"_Catalyst_updateStateByInds", (DL_FUNC) &_Catalyst_updateStateByInds, 2},
+    {"_Catalyst_updateStateVec", (DL_FUNC) &_Catalyst_updateStateVec, 2},
+    {"_Catalyst_AMSIR_sus_inner", (DL_FUNC) &_Catalyst_AMSIR_sus_inner, 6},
     {"_Catalyst_AMSIR", (DL_FUNC) &_Catalyst_AMSIR, 6},
     {"_Catalyst_rcpp_hello", (DL_FUNC) &_Catalyst_rcpp_hello, 0},
     {"_Catalyst_sirLoopGroups", (DL_FUNC) &_Catalyst_sirLoopGroups, 5},

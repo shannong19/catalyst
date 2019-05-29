@@ -153,11 +153,15 @@ IntegerMatrix UtoX_SIR(IntegerMatrix U, int T){
   int SMax;
   int IMax;
   int A0;
+  int s=0;
+  int i=0;
+  int r=0;
   for(int nn=0; nn < N; nn++){
     SMax = U(1, nn);
     IMax = U(2, nn);
     A0 = U(0, nn);
     for(int tt=0; tt < T; tt++){
+      
       if(A0 == 0){ // agent starts S
         if(tt <= SMax){
           X(tt, 0)++;

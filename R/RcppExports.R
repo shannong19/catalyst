@@ -45,8 +45,36 @@ nbrsByDist <- function(M, thresh, max_nbrs) {
     .Call(`_Catalyst_nbrsByDist`, M, thresh, max_nbrs)
 }
 
-AMSIR <- function(ll, T, A0, nbrList, beta, gamma) {
-    .Call(`_Catalyst_AMSIR`, ll, T, A0, nbrList, beta, gamma)
+findIfSus <- function(A0, IMax, T) {
+    .Call(`_Catalyst_findIfSus`, A0, IMax, T)
+}
+
+makeStateVec <- function(A0, state) {
+    .Call(`_Catalyst_makeStateVec`, A0, state)
+}
+
+whichState <- function(x, state) {
+    .Call(`_Catalyst_whichState`, x, state)
+}
+
+countIntersect <- function(infVec, nbrOfSusInds) {
+    .Call(`_Catalyst_countIntersect`, infVec, nbrOfSusInds)
+}
+
+updateStateByInds <- function(vec, inds) {
+    .Call(`_Catalyst_updateStateByInds`, vec, inds)
+}
+
+updateStateVec <- function(vec1, vec2) {
+    .Call(`_Catalyst_updateStateVec`, vec1, vec2)
+}
+
+AMSIR_sus_inner <- function(ll, T, A0, nbrList, beta, gamma) {
+    .Call(`_Catalyst_AMSIR_sus_inner`, ll, T, A0, nbrList, beta, gamma)
+}
+
+AMSIR <- function(L, T, A0, nbrList, beta, gamma) {
+    .Call(`_Catalyst_AMSIR`, L, T, A0, nbrList, beta, gamma)
 }
 
 rcpp_hello <- function() {

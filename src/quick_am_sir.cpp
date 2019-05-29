@@ -19,6 +19,21 @@ int findIfSus(int A0, int IMax, int T){
 
 
 // [[Rcpp::export]]
+IntegerVector makeStateVec(IntegerVector A0, int state){
+  int N = A0.size();
+  IntegerVector stateVec(N, -1);
+  for(int ii=0; ii < N; ii++){
+    if(A0[ii] == state){
+      stateVec[ii] = ii;
+    }
+    
+  }
+  return stateVec;
+  
+}
+
+
+// [[Rcpp::export]]
 IntegerVector whichState(IntegerVector x, int state){
   int N = x.size();
   IntegerVector inds(N, -1);
@@ -37,64 +52,143 @@ IntegerVector whichState(IntegerVector x, int state){
   return inds[inds > -1];
 }
 
+
+// [[Rcpp::export]]
+int countIntersect(IntegerVector infVec, IntegerVector nbrOfSusInds){
+  int nNbr = nbrOfSusInds.size();
+  int count = 0;
+  int ind = 0;
+  for(int ii=0; ii < nNbr; ii++){
+    ind = nbrOfSusInds[ii];
+    if(infVec[ind] > -1){
+      count++;
+    }
+  }
+  return count;
+}
+
+// [[Rcpp::export]]
+IntegerVector updateStateByInds(IntegerVector vec, IntegerVector inds){
+  IntegerVector newVec = clone(vec);
+  int nInds = inds.size();
+  int ind=0;
+  for(int ii=0; ii < nInds; ii++){
+    ind = inds[ii];
+    newVec[ind] = ind;
+  }
+  
+  return newVec;
+}
+
+// [[Rcpp::export]]
+IntegerVector updateStateVec(IntegerVector vec1, IntegerVector vec2){
+  int N = vec1.size();
+  IntegerVector newVec(N, -1);
+  for(int ii=0; ii < N; ii++){
+    if(vec1[ii] > -1 & vec2[ii] > -1){
+      newVec[ii] = ii;
+    }
+  }
+  return newVec;
+}
+
+
 // Quick and dirty AM SIR
 // 
+// Loop over first the susceptibles (subsetting to only neighbors of infectious)
 // Return the U matrix for a single iteration
 // [[Rcpp::export]]
-IntegerMatrix AMSIR_inf_inner(int ll, int T,
-                    IntegerVector A0,
-                    List nbrList,
-                    double beta,
-                    double gamma){
+IntegerMatrix AMSIR_sus_inner(int ll, int T,
+                              IntegerVector A0,
+                              List nbrList,
+                              double beta,
+                              double gamma){
   
   int N = A0.size();
   IntegerMatrix U(3, N);
   IntegerVector SMax(N, T-1);  // Default is T-1 the max value
   IntegerVector IMax(N, T-1); // Same for max I
-  IntegerVector infInds = whichState(A0, 1);
-  IntegerVector newA0 = clone(A0);
+  IntegerVector infInds;
+  IntegerVector susInds;
+  IntegerVector nbrSusInds;
+  IntegerVector nbrInds;
+  IntegerVector susVec(N, -1);
+  IntegerVector infVec(N, -1);
+  IntegerVector nbrSusVec(N, -1);
+  IntegerVector nbrVec(N, -1);
+  IntegerVector curNbrInds;
+  IntegerVector nbrOfSusInds;
+  int nInfNbrs;
   int infInd;
-  int isSus;
-  int nbrInd;
-  int isNewInf=0;
-  int isNewRec=0;
+  int nbrSusInd;
+  int nInfInds;
+  int nNbrs = 1;
+  int isNewRec;
+  int isNewInf;
   double infProb;
+
+  //
+  //
+  susVec = makeStateVec(A0, 0);
+  infVec = makeStateVec(A0, 1);
   for(int tt=1; tt < (T-1); tt++){
-    infInds = whichState(newA0, 1);
-    // Loop through infectious
-    if(infInds[0] = -1){ // If there are no infectious, stop
+    IntegerVector nbrVec(N, -1); // reset to o neighbors
+    infInds = infVec[infVec > -1];
+    susInds = susVec[susVec > -1];
+   // Rprintf("tt %d\n", tt);
+   // Rprintf("size of infInds %d\n", infInds.size());
+   // Rf_PrintValue(infInds);
+
+    if(infInds.size() == 0){ // If there are no infectious, stop
       break;
     }
     for(int ii=0; ii < infInds.size(); ii++){
+      // Find susceptible neighbors, and combine them together
       infInd = infInds[ii];
-      IntegerVector nbrVec;
-      nbrVec = nbrList[infInd];
-      if(nbrVec[0] = -1){
-        continue;
+
+      curNbrInds = nbrList[infInd];
+      if(curNbrInds.size() > 0){
+        nbrVec = updateStateByInds(nbrVec, curNbrInds); // this is the the unioned neighbors of all the infectious
       }
-      // Loop through neighbors of infInd
-      for(int jj=0; jj < nbrVec.size(); jj++){
-        // check if susceptible
-        nbrInd = nbrVec[jj];
-        isSus = findIfSus(A0[nbrInd], IMax[nbrInd], T);
-        if(isSus == 1){
-          // Infect
-          infProb = beta / (1.0 * nbrVec.size()); // Warning:  this is a big change! (from N)
-          isNewInf = as<int>(rbinom(1, 1, infProb));
-          if(isNewInf == 1){
-            SMax[nbrInd] = tt-1;
-            newA0[nbrInd] = 1; // tell model agent is infectious for next step
-          }
-         
-        }
-      }
+
       // Recover the infectious
       isNewRec = as<int>(rbinom(1, 1, gamma));
+      //   Rprintf("infInd: %d; isNewRec: %d; tt-1: %d\n", infInd, isNewRec, tt-1);
       if(isNewRec == 1){
         IMax[infInd] = tt-1;
-        newA0[infInd] = 0; // tell model agent is no longer infectious
+        infVec[infInd] = -1; // tell model agent is no longer infectious
       }
       
+    }
+     nbrSusVec = updateStateVec(susVec, nbrVec);
+     nbrSusInds = nbrSusVec[nbrSusVec > -1];
+   //  Rprintf("size of nbrSusVec %d \n", nbrSusInds.size());
+    if(nbrSusInds.size() != 0){
+      for(int jj=0; jj < nbrSusInds.size(); jj++){
+        // Loop over the susceptible neighbors of the infectious
+        nbrSusInd = nbrSusInds[jj]; // Should have at least one infectious neighbor
+        nbrOfSusInds = nbrList[nbrSusInd];  // extract all their neighbors
+        nNbrs = nbrOfSusInds.size();
+      //  Rprintf("nNbrs %d\n", nNbrs);
+      // count total number
+        if(nNbrs >= (N-1)){
+          nInfInds = infInds.size();
+        }else {
+          nInfInds = countIntersect(infVec, nbrOfSusInds); // count how many are infectious nbrs
+        }
+       // Rprintf("nInfInds %d\n", nInfInds);
+      //   // Infect nbr
+       infProb = beta * (1.0 * nInfInds) / (1.0 * (nNbrs + 1));
+       // Rprintf("infProb %.2f\n", infProb);
+        isNewInf = as<int>(rbinom(1, 1, infProb));
+      if(isNewInf == 1){
+           SMax[nbrSusInd] = tt-1;
+       // Rf_PrintValue(SMax);
+        susVec[nbrSusInd] = -1; // no longer susceptible
+        infVec[nbrSusInd] = nbrSusInd; // tell model agent is infectious for next step
+         }
+
+      }
     }
     
   }
@@ -105,27 +199,34 @@ IntegerMatrix AMSIR_inf_inner(int ll, int T,
   
   return U;
   
-
   
 }
+
+
+
+
 
 // LoopType is 0 for looping over infectious and 1 for over susceptible (but smartly, looking at who was infected)
 // Return the list of U arrays for each iteration L
 // [[Rcpp::export]]
-IntegerMatrix AMSIR(int L, int T,
-                              IntegerVector A0,
-                              List nbrList,
-                              double beta,
-                              double gamma,
-                              int loopType){
+List AMSIR(int L, int T,
+           IntegerVector A0,
+           List nbrList,
+           double beta,
+           double gamma){
   
   List UList(L);
   for(int ll=0; ll < L; ll++){
-    Ulist[ll] = AMSIR_inf_inner(ll, T,
-                                A0, nbrList,
-                                beta, gamma);
+    if((ll + 1) % 10 == 0){
+      Rprintf("Iteration %d\n", ll + 1);
+    }
+  
+      UList[ll] = AMSIR_sus_inner(ll, T,
+                                  A0, nbrList,
+                                  beta, gamma);
+      
   }
-  return Ulist;
+  return UList;
   
 } 
 
@@ -133,8 +234,19 @@ IntegerMatrix AMSIR(int L, int T,
 
 
 /*** R
-x <- c(1, 0, 0)
-out <- whichState(x, 0)
-out
+
+N <- 1000
+a0 <- rep(0, N)
+a0[1:50] <- 1
+T <- 100
+beta <- .1
+gamma <- .03
+nbr_list <- lapply(1:N, function(ii) (1:N)[-ii])
+L <- 100
+
+t <- proc.time()[3]
+out <-  AMSIR(L, T, a0,
+      nbr_list, beta, gamma)
+proc.time()[3] - t
 
 */
