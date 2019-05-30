@@ -243,7 +243,6 @@ format_obs <- function(obs, plot_type, CI){
         } else{
             var_order <- c(var_order, "data_type")
         }
-
         df <- reshape2::melt(obs, id.vars = c("t"))
         colnames(df) <- c("t", "state", "obs")
         df$mean <- NA
@@ -309,6 +308,10 @@ format_obs <- function(obs, plot_type, CI){
 #' @return ggplot
 plot_ests.state <- function(df, pretty = TRUE, free_scales = FALSE,
                             obs_size = obs_size){
+
+    N <- df$mean[df$t == 200 & df$state == "S" & !is.na(df$mean)] +
+        df$mean[df$t == 200 & df$state == "I" & !is.na(df$mean)] +
+        df$mean[df$t == 200 & df$state == "R" & !is.na(df$mean)]## Needs to not be NA
     scale_arg <- ifelse(free_scales, "free_y", "fixed")
     g <- ggplot2::ggplot(data = df,
                          ggplot2::aes(x= t, group = data_type)) +
@@ -317,16 +320,16 @@ plot_ests.state <- function(df, pretty = TRUE, free_scales = FALSE,
     if("var" %in% colnames(df)){
         g <- g +
             ggplot2::geom_ribbon(
-                         ggplot2::aes(ymin = mean - 2 * sqrt(abs(var)),
-                                      ymax = mean + 2 * sqrt(abs(var)),
+                         ggplot2::aes(ymin = (mean - 2 * sqrt(abs(var)) ) / N * 100,
+                                      ymax = (mean + 2 * sqrt(abs(var))) / N * 100,
                                       fill = factor(data_type)),
                          col = NA, alpha = .2)
         
     }
-    g <- g + ggplot2::geom_line(ggplot2::aes(y = mean,
+    g <- g + ggplot2::geom_line(ggplot2::aes(y = mean / N * 100,
                                              col = factor(data_type)),
                                              linetype = 1, size = 2) +
-        ggplot2:: geom_point(ggplot2::aes(y = obs,
+        ggplot2:: geom_point(ggplot2::aes(y = obs / N * 100,
                                           col = factor(data_type)),
                              col = "black", size = obs_size)
 

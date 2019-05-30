@@ -160,30 +160,34 @@ IntegerMatrix UtoX_SIR(IntegerMatrix U, int T){
     SMax = U(1, nn);
     IMax = U(2, nn);
     A0 = U(0, nn);
-    for(int tt=0; tt < T; tt++){
-      
-      if(A0 == 0){ // agent starts S
+    
+    if(A0 == 0){ // agent starts S
+      for(int tt=0; tt < T; tt++){
         if(tt <= SMax){
-          X(tt, 0)++;
+         X(tt, 0)++;
         } else if(tt <= IMax){
           X(tt,1)++;
         } else{
-          X(tt,2)++;
+           X(tt,2)++;
         }
-        
-      } else if (A0 == 1){ // agent starts I
-          if(tt <= IMax){
-            X(tt, 1)++; 
-          } else {
-            X(tt, 2)++;
-          }
-      } else if(A0 == 2){ // agent starts R
+      }
+    } else if (A0 == 1){ // agent starts I
+      for(int tt=0; tt < T; tt++){
+        if(tt <= IMax){
+          X(tt, 1)++; 
+        } else {
+          X(tt, 2)++;
+        }
+      } 
+    } else if(A0 == 2){ // agent starts R
+      for(int tt=0; tt < T; tt++){
         X(tt, 2)++;
       }
-      
     }
+
   }
-  return X;
+ 
+return X;
 }
 
 
