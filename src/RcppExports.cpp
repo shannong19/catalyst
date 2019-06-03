@@ -142,19 +142,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// findIfSus
-int findIfSus(int A0, int IMax, int T);
-RcppExport SEXP _Catalyst_findIfSus(SEXP A0SEXP, SEXP IMaxSEXP, SEXP TSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< int >::type A0(A0SEXP);
-    Rcpp::traits::input_parameter< int >::type IMax(IMaxSEXP);
-    Rcpp::traits::input_parameter< int >::type T(TSEXP);
-    rcpp_result_gen = Rcpp::wrap(findIfSus(A0, IMax, T));
-    return rcpp_result_gen;
-END_RCPP
-}
 // makeStateVec
 IntegerVector makeStateVec(IntegerVector A0, int state);
 RcppExport SEXP _Catalyst_makeStateVec(SEXP A0SEXP, SEXP stateSEXP) {
@@ -408,7 +395,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_Catalyst_deg_to_rad_rcpp", (DL_FUNC) &_Catalyst_deg_to_rad_rcpp, 1},
     {"_Catalyst_dist_haversine_rcpp", (DL_FUNC) &_Catalyst_dist_haversine_rcpp, 4},
     {"_Catalyst_nbrsByDist", (DL_FUNC) &_Catalyst_nbrsByDist, 3},
-    {"_Catalyst_findIfSus", (DL_FUNC) &_Catalyst_findIfSus, 3},
     {"_Catalyst_makeStateVec", (DL_FUNC) &_Catalyst_makeStateVec, 2},
     {"_Catalyst_whichState", (DL_FUNC) &_Catalyst_whichState, 2},
     {"_Catalyst_countIntersect", (DL_FUNC) &_Catalyst_countIntersect, 2},

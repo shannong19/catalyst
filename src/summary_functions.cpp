@@ -153,9 +153,6 @@ IntegerMatrix UtoX_SIR(IntegerMatrix U, int T){
   int SMax;
   int IMax;
   int A0;
-  int s=0;
-  int i=0;
-  int r=0;
   for(int nn=0; nn < N; nn++){
     SMax = U(1, nn);
     IMax = U(2, nn);
@@ -193,42 +190,42 @@ return X;
 
 
 
-
-// You can include R code blocks in C++ files processed with sourceCpp
-// (useful for testing and development). The R code will be automatically 
-// run after the compilation.
-//
-
-/*** R
-U <- matrix(c(0, 0, 1, 0,
-              0, 1, 2, 2,
-              1, 2, 2, 2), byrow = TRUE, nrow = 3)
-Tmax <- 3
-A <- UtoA_SIR(U, Tmax)
-A
-
-## U to X
-## 
-X <- UtoX_SIR(U, Tmax)
-X
-
-
-A <- matrix(c(0, 0, 1, 2,
-              0, 1, 1, 2,
-              1, 2, 1, 2), byrow = TRUE, nrow = 3)
-U <- AtoU_SIR(A)
-U
-
-## A to X
-X <- AtoX(A, K = 3)
-
-UtoA_SIR(AtoU_SIR(A), Tmax)
-
-U <- matrix(c(0, 0, 1, 0,
-              0, 1, 2, 2,
-              1, 2, 2, 2), byrow = TRUE, nrow = 3)
-AtoU_SIR(UtoA_SIR(U, Tmax))
-
-*/
-
-
+// 
+// // You can include R code blocks in C++ files processed with sourceCpp
+// // (useful for testing and development). The R code will be automatically 
+// // run after the compilation.
+// //
+// 
+// /*** R
+// U <- matrix(c(0, 0, 1, 0,
+//               0, 1, 2, 2,
+//               1, 2, 2, 2), byrow = TRUE, nrow = 3)
+// Tmax <- 3
+// A <- UtoA_SIR(U, Tmax)
+// A
+// 
+// ## U to X
+// ## 
+// X <- UtoX_SIR(U, Tmax)
+// X
+// 
+// 
+// A <- matrix(c(0, 0, 1, 2,
+//               0, 1, 1, 2,
+//               1, 2, 1, 2), byrow = TRUE, nrow = 3)
+// U <- AtoU_SIR(A)
+// U
+// 
+// ## A to X
+// X <- AtoX(A, K = 3)
+// 
+// UtoA_SIR(AtoU_SIR(A), Tmax)
+// 
+// U <- matrix(c(0, 0, 1, 0,
+//               0, 1, 2, 2,
+//               1, 2, 2, 2), byrow = TRUE, nrow = 3)
+// AtoU_SIR(UtoA_SIR(U, Tmax))
+// 
+// */
+// 
+// 

@@ -45,10 +45,6 @@ nbrsByDist <- function(M, thresh, max_nbrs) {
     .Call(`_Catalyst_nbrsByDist`, M, thresh, max_nbrs)
 }
 
-findIfSus <- function(A0, IMax, T) {
-    .Call(`_Catalyst_findIfSus`, A0, IMax, T)
-}
-
 makeStateVec <- function(A0, state) {
     .Call(`_Catalyst_makeStateVec`, A0, state)
 }

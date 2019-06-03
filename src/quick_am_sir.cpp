@@ -3,19 +3,19 @@ using namespace Rcpp;
 
 
 
-// [[Rcpp::export]]
-int findIfSus(int A0, int IMax, int T){
-  // agent is susceptible only IF:
-  // A0 is 0
-  // AND
-  // (IMax = T-1 )
-  int isSus = 0; // 1 is susceptible
-  if(A0 == 0 & IMax == T-1){
-    isSus = 1;
-  }
-  return isSus;
-  
-}
+// // [[Rcpp::export]]
+// int findIfSus(int A0n, int IMax, int T){
+//   // agent is susceptible only IF:
+//   // A0 is 0
+//   // AND
+//   // (IMax = T-1 )
+//   int isSus = 0; // 1 is susceptible
+//   if(A0n == 0 & IMax == T-1){
+//     isSus = 1;
+//   }
+//   return isSus;
+//   
+// }
 
 
 // [[Rcpp::export]]
@@ -56,6 +56,7 @@ IntegerVector whichState(IntegerVector x, int state){
 // [[Rcpp::export]]
 int countIntersect(IntegerVector infVec, IntegerVector nbrOfSusInds){
   int nNbr = nbrOfSusInds.size();
+  //Rf_PrintValue(nbrOfSusInds);
   int count = 0;
   int ind = 0;
   for(int ii=0; ii < nNbr; ii++){
@@ -67,6 +68,9 @@ int countIntersect(IntegerVector infVec, IntegerVector nbrOfSusInds){
   return count;
 }
 
+
+// Take old vector keeping track of all the agent states 
+// and make the indices matching inds and make them a positive value
 // [[Rcpp::export]]
 IntegerVector updateStateByInds(IntegerVector vec, IntegerVector inds){
   IntegerVector newVec = clone(vec);
@@ -104,7 +108,8 @@ IntegerMatrix AMSIR_sus_inner(int ll, int T,
                               double beta,
                               double gamma){
   
-  int N = A0.size();
+  IntegerVector newA0 = clone(A0);
+  int N = newA0.size();
   IntegerMatrix U(3, N);
   IntegerVector SMax(N, T-1);  // Default is T-1 the max value
   IntegerVector IMax(N, T-1); // Same for max I
@@ -126,11 +131,11 @@ IntegerMatrix AMSIR_sus_inner(int ll, int T,
   int isNewRec;
   int isNewInf;
   double infProb;
-
+  IntegerVector currentInfVec;
   //
   //
-  susVec = makeStateVec(A0, 0);
-  infVec = makeStateVec(A0, 1);
+  susVec = makeStateVec(newA0, 0);
+  infVec = makeStateVec(newA0, 1);
   for(int tt=1; tt < (T-1); tt++){
     IntegerVector nbrVec(N, -1); // reset to o neighbors
     infInds = infVec[infVec > -1];
@@ -138,8 +143,10 @@ IntegerMatrix AMSIR_sus_inner(int ll, int T,
    // Rprintf("tt %d\n", tt);
    // Rprintf("size of infInds %d\n", infInds.size());
    // Rf_PrintValue(infInds);
+    currentInfVec = clone(infVec);
 
     if(infInds.size() == 0){ // If there are no infectious, stop
+     // Rprintf("no infectious inds at time t=%d", tt);
       break;
     }
     for(int ii=0; ii < infInds.size(); ii++){
@@ -147,7 +154,7 @@ IntegerMatrix AMSIR_sus_inner(int ll, int T,
       infInd = infInds[ii];
 
       curNbrInds = nbrList[infInd];
-      if(curNbrInds.size() > 0){
+      if(curNbrInds.size() > 0 & curNbrInds[0] != -1){
         nbrVec = updateStateByInds(nbrVec, curNbrInds); // this is the the unioned neighbors of all the infectious
       }
 
@@ -158,32 +165,35 @@ IntegerMatrix AMSIR_sus_inner(int ll, int T,
         IMax[infInd] = tt-1;
         infVec[infInd] = -1; // tell model agent is no longer infectious
       }
+   //   Rf_PrintValue(infInds);
       
     }
      nbrSusVec = updateStateVec(susVec, nbrVec);
      nbrSusInds = nbrSusVec[nbrSusVec > -1];
-   //  Rprintf("size of nbrSusVec %d \n", nbrSusInds.size());
+  //  Rprintf("size of nbrSusVec %d \n", nbrSusInds.size());
     if(nbrSusInds.size() != 0){
+    //  Rprintf("drawing new infections");
       for(int jj=0; jj < nbrSusInds.size(); jj++){
         // Loop over the susceptible neighbors of the infectious
         nbrSusInd = nbrSusInds[jj]; // Should have at least one infectious neighbor
         nbrOfSusInds = nbrList[nbrSusInd];  // extract all their neighbors
         nNbrs = nbrOfSusInds.size();
-      //  Rprintf("nNbrs %d\n", nNbrs);
+        //Rprintf("nNbrs %d\n", nNbrs);
       // count total number
         if(nNbrs >= (N-1)){
           nInfInds = infInds.size();
         }else {
-          nInfInds = countIntersect(infVec, nbrOfSusInds); // count how many are infectious nbrs
+          nInfInds = countIntersect(currentInfVec, nbrOfSusInds); // count how many are infectious nbrs
+          Rprintf("nInfInds %d\n", nInfInds);        
         }
-       // Rprintf("nInfInds %d\n", nInfInds);
+      //
       //   // Infect nbr
        infProb = beta * (1.0 * nInfInds) / (1.0 * (nNbrs + 1));
        // Rprintf("infProb %.2f\n", infProb);
         isNewInf = as<int>(rbinom(1, 1, infProb));
       if(isNewInf == 1){
            SMax[nbrSusInd] = tt-1;
-       // Rf_PrintValue(SMax);
+        //Rf_PrintValue(SMax);
         susVec[nbrSusInd] = -1; // no longer susceptible
         infVec[nbrSusInd] = nbrSusInd; // tell model agent is infectious for next step
          }
@@ -192,7 +202,7 @@ IntegerMatrix AMSIR_sus_inner(int ll, int T,
     }
     
   }
-  U(0, _ ) = A0;
+  U(0, _ ) = newA0;
   U(1, _ ) = SMax;
   U(2, _ ) = IMax;
   
@@ -231,22 +241,22 @@ List AMSIR(int L, int T,
 } 
 
 
-
-
-/*** R
-
-N <- 1000
-a0 <- rep(0, N)
-a0[1:50] <- 1
-T <- 100
-beta <- .1
-gamma <- .03
-nbr_list <- lapply(1:N, function(ii) (1:N)[-ii])
-L <- 100
-
-t <- proc.time()[3]
-out <-  AMSIR(L, T, a0,
-      nbr_list, beta, gamma)
-proc.time()[3] - t
-
-*/
+// 
+// 
+// /*** R
+// 
+// N <- 1000
+// a0 <- rep(0, N)
+// a0[25:75] <- 1
+// T <- 100
+// beta <- .1
+// gamma <- .03
+// nbr_list <- lapply(1:N, function(ii) (1:N)[-ii])
+// L <- 100
+// 
+// t <- proc.time()[3]
+// out <-  AMSIR(L, T, a0,
+//       nbr_list, beta, gamma)
+// proc.time()[3] - t
+// 
+// */
