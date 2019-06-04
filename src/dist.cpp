@@ -39,6 +39,14 @@ double dist_haversine_rcpp(double xlon,
 
 
 
+// [[Rcpp::export]]
+Rcpp::IntegerVector sample_int(int n, int min, int max) {
+  Rcpp::IntegerVector pool = Rcpp::seq(min, max);
+  std::random_shuffle(pool.begin(), pool.end());
+  return pool[Rcpp::Range(0, n - 1)];
+}
+
+
 // Get the neighbor list based on haversine distance
 // 
 // @param M matrix of size Nx2 where N is the number of agents
@@ -56,22 +64,27 @@ List nbrsByDist(NumericMatrix M, double thresh, int max_nbrs){
   double ylon;
   double ylat;
   IntegerVector nbrVec(max_nbrs);
+  IntegerVector permutedInds(n_obs);
+  int permutedInd;
   List nbrList(n_obs);
   for(int ii=0; ii < n_obs; ii++){
     if(ii % 10000 == 0){
       Rprintf("agent %d\n", ii);
     }
     counter = 0;
+    // Need to permute the indices
+    permutedInds = sample_int(n_obs, 0, n_obs-1);
     for(int jj=0; jj < n_obs; jj++){
-      if(ii != jj){
+      permutedInd = permutedInds[jj];
+      if(ii != permutedInd){
         xlon = M(ii, 0);
         xlat = M(ii,1);
-        ylon = M(jj, 0);
-        ylat = M(jj, 1);
+        ylon = M(permutedInd, 0);
+        ylat = M(permutedInd, 1);
         dist = dist_haversine_rcpp(xlon, xlat, ylon, ylat);
       //  Rprintf("ii %d; jj %d; dist %.2f\n", ii, jj, dist);
         if(dist <= thresh){
-          nbrVec[counter] = jj;
+          nbrVec[counter] = permutedInd;
           counter = counter + 1;
         }
         if(counter >= max_nbrs){  // Have too many neighbors
@@ -99,4 +112,7 @@ List nbrsByDist(NumericMatrix M, double thresh, int max_nbrs){
 
 
 
-
+/*** R
+N <- 4
+samp <- sample_int(4, 0, N -1)
+ */

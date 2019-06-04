@@ -41,6 +41,10 @@ dist_haversine_rcpp <- function(xlon, xlat, ylon, ylat) {
     .Call(`_Catalyst_dist_haversine_rcpp`, xlon, xlat, ylon, ylat)
 }
 
+sample_int <- function(n, min, max) {
+    .Call(`_Catalyst_sample_int`, n, min, max)
+}
+
 nbrsByDist <- function(M, thresh, max_nbrs) {
     .Call(`_Catalyst_nbrsByDist`, M, thresh, max_nbrs)
 }
@@ -65,8 +69,12 @@ updateStateVec <- function(vec1, vec2) {
     .Call(`_Catalyst_updateStateVec`, vec1, vec2)
 }
 
-AMSIR_sus_inner <- function(ll, T, A0, nbrList, beta, gamma) {
-    .Call(`_Catalyst_AMSIR_sus_inner`, ll, T, A0, nbrList, beta, gamma)
+AMSIR_sus_inner <- function(ll, T, A0, nbrList, beta, gamma, totalNbrCounts) {
+    .Call(`_Catalyst_AMSIR_sus_inner`, ll, T, A0, nbrList, beta, gamma, totalNbrCounts)
+}
+
+countContacts <- function(nbrList) {
+    .Call(`_Catalyst_countContacts`, nbrList)
 }
 
 AMSIR <- function(L, T, A0, nbrList, beta, gamma) {

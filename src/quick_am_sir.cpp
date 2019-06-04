@@ -106,7 +106,8 @@ IntegerMatrix AMSIR_sus_inner(int ll, int T,
                               IntegerVector A0,
                               List nbrList,
                               double beta,
-                              double gamma){
+                              double gamma,
+                              IntegerVector totalNbrCounts){
   
   IntegerVector newA0 = clone(A0);
   int N = newA0.size();
@@ -130,6 +131,7 @@ IntegerMatrix AMSIR_sus_inner(int ll, int T,
   int nNbrs = 1;
   int isNewRec;
   int isNewInf;
+  int nbrInd;
   double infProb;
   IntegerVector currentInfVec;
   //
@@ -137,9 +139,9 @@ IntegerMatrix AMSIR_sus_inner(int ll, int T,
   susVec = makeStateVec(newA0, 0);
   infVec = makeStateVec(newA0, 1);
   for(int tt=1; tt < (T-1); tt++){
+    IntegerVector nInfNbrContacts(N, 0); // count the infected contacts of agents
     IntegerVector nbrVec(N, -1); // reset to o neighbors
     infInds = infVec[infVec > -1];
-    susInds = susVec[susVec > -1];
    // Rprintf("tt %d\n", tt);
    // Rprintf("size of infInds %d\n", infInds.size());
    // Rf_PrintValue(infInds);
@@ -155,7 +157,10 @@ IntegerMatrix AMSIR_sus_inner(int ll, int T,
 
       curNbrInds = nbrList[infInd];
       if(curNbrInds.size() > 0 & curNbrInds[0] != -1){
-        nbrVec = updateStateByInds(nbrVec, curNbrInds); // this is the the unioned neighbors of all the infectious
+        for(int nn=0; nn < curNbrInds.size(); nn++){
+          nbrInd = curNbrInds[nn];
+          nInfNbrContacts[nbrInd]++; // add another contact
+        }
       }
 
       // Recover the infectious
@@ -168,27 +173,21 @@ IntegerMatrix AMSIR_sus_inner(int ll, int T,
    //   Rf_PrintValue(infInds);
       
     }
-     nbrSusVec = updateStateVec(susVec, nbrVec);
-     nbrSusInds = nbrSusVec[nbrSusVec > -1];
+     nbrSusInds = susVec[nInfNbrContacts > 0 & susVec > -1];
   //  Rprintf("size of nbrSusVec %d \n", nbrSusInds.size());
     if(nbrSusInds.size() != 0){
     //  Rprintf("drawing new infections");
       for(int jj=0; jj < nbrSusInds.size(); jj++){
         // Loop over the susceptible neighbors of the infectious
         nbrSusInd = nbrSusInds[jj]; // Should have at least one infectious neighbor
-        nbrOfSusInds = nbrList[nbrSusInd];  // extract all their neighbors
-        nNbrs = nbrOfSusInds.size();
+        nNbrs = totalNbrCounts[nbrSusInd];
         //Rprintf("nNbrs %d\n", nNbrs);
       // count total number
-        if(nNbrs >= (N-1)){
-          nInfInds = infInds.size();
-        }else {
-          nInfInds = countIntersect(currentInfVec, nbrOfSusInds); // count how many are infectious nbrs
-          Rprintf("nInfInds %d\n", nInfInds);        
-        }
-      //
+
+        nInfInds = nInfNbrContacts[nbrSusInd]; // count how many are infectious nbrs
+      //  Rprintf("nInfInds %d\n", nInfInds);        
       //   // Infect nbr
-       infProb = beta * (1.0 * nInfInds) / (1.0 * (nNbrs + 1));
+       infProb = beta * (1.0 * nInfInds) / (1.0 * (nNbrs));
        // Rprintf("infProb %.2f\n", infProb);
         isNewInf = as<int>(rbinom(1, 1, infProb));
       if(isNewInf == 1){
@@ -212,6 +211,24 @@ IntegerMatrix AMSIR_sus_inner(int ll, int T,
   
 }
 
+// Count the contacts of each nbr (recall nbrs are not bi-directional necessarily)
+// [[Rcpp::export]]
+IntegerVector countContacts(List nbrList){
+  int L = nbrList.size();
+  int ind;
+  IntegerVector currentNbrs;
+  IntegerVector nTotalContacts(L, 0);
+  for(int ll=0; ll < L; ll++){
+    currentNbrs = nbrList[ll];
+    for(int ii=0; ii < currentNbrs.size(); ii++){
+      ind = currentNbrs[ii];
+      nTotalContacts[ind]++;
+    }
+    
+  }
+  return nTotalContacts;
+  
+}
 
 
 
@@ -225,6 +242,9 @@ List AMSIR(int L, int T,
            double beta,
            double gamma){
   
+  IntegerVector totalNbrCounts;
+  totalNbrCounts = countContacts(nbrList);
+  
   List UList(L);
   for(int ll=0; ll < L; ll++){
     if((ll + 1) % 10 == 0){
@@ -233,7 +253,8 @@ List AMSIR(int L, int T,
   
       UList[ll] = AMSIR_sus_inner(ll, T,
                                   A0, nbrList,
-                                  beta, gamma);
+                                  beta, gamma,
+                                  totalNbrCounts);
       
   }
   return UList;
@@ -241,22 +262,42 @@ List AMSIR(int L, int T,
 } 
 
 
+/*** R
+N <- 4
+
+nbrList <- vector(mode = "list", length = N)
+for(ii in 1:N){
+  nNbrs <- rpois(n=1, lambda = 1)
+  nNbrs <- ifelse(nNbrs > N-1, N-1, nNbrs)
+  if(nNbrs == 0){
+    nbrList[[ii]] = -1
+  } else{
+   nbrList[[ii]] = sample((0:(N-1))[-ii], nNbrs)
+  }
+}
+
+out <- countContacts(nbrList)
+nbrList
+out
+*/
+
+
 // 
 // 
-// /*** R
-// 
-// N <- 1000
-// a0 <- rep(0, N)
-// a0[25:75] <- 1
-// T <- 100
-// beta <- .1
-// gamma <- .03
-// nbr_list <- lapply(1:N, function(ii) (1:N)[-ii])
-// L <- 100
-// 
-// t <- proc.time()[3]
-// out <-  AMSIR(L, T, a0,
-//       nbr_list, beta, gamma)
-// proc.time()[3] - t
-// 
-// */
+ /*** R
+
+N <- 1000
+a0 <- rep(0, N)
+a0[25:75] <- 1
+T <- 100
+beta <- .1
+gamma <- .03
+nbr_list <- lapply(1:N, function(ii) (1:N)[-ii])
+L <- 100
+
+t <- proc.time()[3]
+out <-  AMSIR(L, T, a0,
+      nbr_list, beta, gamma)
+proc.time()[3] - t
+
+*/

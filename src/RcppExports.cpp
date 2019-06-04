@@ -129,6 +129,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// sample_int
+Rcpp::IntegerVector sample_int(int n, int min, int max);
+RcppExport SEXP _Catalyst_sample_int(SEXP nSEXP, SEXP minSEXP, SEXP maxSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< int >::type min(minSEXP);
+    Rcpp::traits::input_parameter< int >::type max(maxSEXP);
+    rcpp_result_gen = Rcpp::wrap(sample_int(n, min, max));
+    return rcpp_result_gen;
+END_RCPP
+}
 // nbrsByDist
 List nbrsByDist(NumericMatrix M, double thresh, int max_nbrs);
 RcppExport SEXP _Catalyst_nbrsByDist(SEXP MSEXP, SEXP threshSEXP, SEXP max_nbrsSEXP) {
@@ -203,8 +216,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // AMSIR_sus_inner
-IntegerMatrix AMSIR_sus_inner(int ll, int T, IntegerVector A0, List nbrList, double beta, double gamma);
-RcppExport SEXP _Catalyst_AMSIR_sus_inner(SEXP llSEXP, SEXP TSEXP, SEXP A0SEXP, SEXP nbrListSEXP, SEXP betaSEXP, SEXP gammaSEXP) {
+IntegerMatrix AMSIR_sus_inner(int ll, int T, IntegerVector A0, List nbrList, double beta, double gamma, IntegerVector totalNbrCounts);
+RcppExport SEXP _Catalyst_AMSIR_sus_inner(SEXP llSEXP, SEXP TSEXP, SEXP A0SEXP, SEXP nbrListSEXP, SEXP betaSEXP, SEXP gammaSEXP, SEXP totalNbrCountsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -214,7 +227,19 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< List >::type nbrList(nbrListSEXP);
     Rcpp::traits::input_parameter< double >::type beta(betaSEXP);
     Rcpp::traits::input_parameter< double >::type gamma(gammaSEXP);
-    rcpp_result_gen = Rcpp::wrap(AMSIR_sus_inner(ll, T, A0, nbrList, beta, gamma));
+    Rcpp::traits::input_parameter< IntegerVector >::type totalNbrCounts(totalNbrCountsSEXP);
+    rcpp_result_gen = Rcpp::wrap(AMSIR_sus_inner(ll, T, A0, nbrList, beta, gamma, totalNbrCounts));
+    return rcpp_result_gen;
+END_RCPP
+}
+// countContacts
+IntegerVector countContacts(List nbrList);
+RcppExport SEXP _Catalyst_countContacts(SEXP nbrListSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< List >::type nbrList(nbrListSEXP);
+    rcpp_result_gen = Rcpp::wrap(countContacts(nbrList));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -394,13 +419,15 @@ static const R_CallMethodDef CallEntries[] = {
     {"_Catalyst_addClosureNbrs", (DL_FUNC) &_Catalyst_addClosureNbrs, 2},
     {"_Catalyst_deg_to_rad_rcpp", (DL_FUNC) &_Catalyst_deg_to_rad_rcpp, 1},
     {"_Catalyst_dist_haversine_rcpp", (DL_FUNC) &_Catalyst_dist_haversine_rcpp, 4},
+    {"_Catalyst_sample_int", (DL_FUNC) &_Catalyst_sample_int, 3},
     {"_Catalyst_nbrsByDist", (DL_FUNC) &_Catalyst_nbrsByDist, 3},
     {"_Catalyst_makeStateVec", (DL_FUNC) &_Catalyst_makeStateVec, 2},
     {"_Catalyst_whichState", (DL_FUNC) &_Catalyst_whichState, 2},
     {"_Catalyst_countIntersect", (DL_FUNC) &_Catalyst_countIntersect, 2},
     {"_Catalyst_updateStateByInds", (DL_FUNC) &_Catalyst_updateStateByInds, 2},
     {"_Catalyst_updateStateVec", (DL_FUNC) &_Catalyst_updateStateVec, 2},
-    {"_Catalyst_AMSIR_sus_inner", (DL_FUNC) &_Catalyst_AMSIR_sus_inner, 6},
+    {"_Catalyst_AMSIR_sus_inner", (DL_FUNC) &_Catalyst_AMSIR_sus_inner, 7},
+    {"_Catalyst_countContacts", (DL_FUNC) &_Catalyst_countContacts, 1},
     {"_Catalyst_AMSIR", (DL_FUNC) &_Catalyst_AMSIR, 6},
     {"_Catalyst_rcpp_hello", (DL_FUNC) &_Catalyst_rcpp_hello, 0},
     {"_Catalyst_sirLoopGroups", (DL_FUNC) &_Catalyst_sirLoopGroups, 5},
