@@ -11,6 +11,8 @@
 #' @param CI logical.  Default is FALSE.  Should we plot confidence intervals?
 #' @param model_cols color palette
 #' @param n_obs plot every n_obs in the  ternary plot
+#' @param sims_df data frame with t, ll, S, I, and R to be used in ternary CI
+#' @param show_time default is true. Used in ternary
 #' @return a ggplot
 plot_ests <- function(obs, ests, plot_type = "state",
                       CI = FALSE,
@@ -25,13 +27,16 @@ plot_ests <- function(obs, ests, plot_type = "state",
                       subtitle = "",
                       n_obs = 10,
                       free_scales = FALSE,
-                      obs_size = 1
+                      obs_size = 1,
+                      sims_df = NULL,
+                      show_time = TRUE
                       ){
 
     ## format obs
     obs_df <- format_obs(obs, plot_type, CI)
     ests_df <- format_ests(ests, plot_type, CI)
     df <- rbind(obs_df, ests_df)
+
 
     if(!is.null(CI_lab)){
         title <-  paste(title, "with", CI_lab)
@@ -40,7 +45,7 @@ plot_ests <- function(obs, ests, plot_type = "state",
 
 
     if(plot_type == "state"){
-      
+
         g <- plot_ests.state(df, free_scales = free_scales, obs_size = obs_size)
         g <- g + ggplot2::labs(x = xlab, y = ylab,
                                title = title,
@@ -72,7 +77,8 @@ plot_ests <- function(obs, ests, plot_type = "state",
                  
         
     } else if(plot_type == "ternary"){
-        g <- plot_ests.ternary(df, n_obs = n_obs, obs_size = obs_size)
+        g <- plot_ests.ternary(df, n_obs = n_obs, obs_size = obs_size,
+                               CI = CI, sims_df = sims_df, show_time = show_time)
         cols <- c(NA, model_cols[-1])
         g <- g +  ggplot2::labs(title = title,
                                subtitle = subtitle) +
@@ -207,7 +213,7 @@ format_ests.loglinear <- function(ests, CI = FALSE){
 
 #' Format observation data frame for regular plotting function
 #'
-#' @param ests data frame with t, S_mean, I_mean, and R_mean columns along with est_type, and optionally S_var, I_var, R_var (as percents out of total population N) and data_type
+#' @param ests data frame with t, S_mean, I_mean, and R_mean columns along with data_type, and optionally S_var, I_var, R_var (as percents out of total population N) and data_type
 #' @param plot_type "state" for regular SIR vs. t (faceted), "loglinear" for loglinear, and "ternary" for ternary
 #' @param CI logical.  Default is FALSE.  Should we plot confidence intervals?
 #' @return data frame with columns t, S, I, R, and data_type if plot_type = "ternary"
@@ -237,6 +243,9 @@ format_ests.tern <- function(ests, CI = FALSE){
 #' @return data frame with columns "t", "obs", "state" (one of "S", "I", or "R"), "mean", and optionally "var",  along with "data_type"
 format_obs <- function(obs, plot_type, CI){
     if(plot_type == "state"){
+        if("ll" %in% colnames(obs)){
+            obs <- obs[, -which(colnames(obs) == "ll")]
+        }
         var_order <- c("t", "obs", "state", "mean")
         if(CI){
             var_order <- c(var_order, "var", "data_type")
@@ -290,6 +299,7 @@ format_obs <- function(obs, plot_type, CI){
         df$data_type <- 0
         df <- df[, var_order]
 
+
     }
 
 
@@ -309,9 +319,10 @@ format_obs <- function(obs, plot_type, CI){
 plot_ests.state <- function(df, pretty = TRUE, free_scales = FALSE,
                             obs_size = obs_size){
 
-    N <- df$mean[df$t == 200 & df$state == "S" & !is.na(df$mean)] +
-        df$mean[df$t == 200 & df$state == "I" & !is.na(df$mean)] +
-        df$mean[df$t == 200 & df$state == "R" & !is.na(df$mean)]## Needs to not be NA
+    t0 <- min(df$t, na.rm = TRUE)
+    N <- df$mean[df$t == t0 & df$state == "S" & !is.na(df$mean)] +
+        df$mean[df$t == t0 & df$state == "I" & !is.na(df$mean)] +
+        df$mean[df$t == t0 & df$state == "R" & !is.na(df$mean)]## Needs to not be NA
     scale_arg <- ifelse(free_scales, "free_y", "fixed")
     g <- ggplot2::ggplot(data = df,
                          ggplot2::aes(x= t, group = data_type)) +
@@ -379,24 +390,40 @@ plot_ests.loglinear <- function(df, pretty = TRUE){
 #' @param pretty logical.  Default is TRUE
 #' @param number of dates to plot
 #' @return ggplot
-plot_ests.ternary <- function(df, pretty = TRUE, n_obs = 10, obs_size = 1){
+plot_ests.ternary <- function(df, pretty = TRUE, n_obs = 10, obs_size = 2,
+                              CI = FALSE,
+                              sims_df = NULL,
+                              show_time = TRUE){
+
 
     df$id <- ifelse(df$t %% n_obs == 0, df$t / n_obs + 1, 0)
     df$plot_point <- ifelse(df$t %% n_obs == 0, 1,
                      ifelse(as.numeric(as.character(df$data_type)) > 0, NA,
                             1))
     df$obs <- ifelse(df$data_type == 0, "obs", "est")
-    df$size <- ifelse(df$t %% n_obs == 0, 3, obs_size)
-    pal <- c("black", RColorBrewer::brewer.pal(n = max(df$id, na.rm = TRUE),
+    if(show_time){
+        df$size <- ifelse(df$t %% n_obs == 0, 4, obs_size)
+        pal <- c("black", RColorBrewer::brewer.pal(n = max(df$id, na.rm = TRUE),
                                                "Paired"))
+    }
+    else {
+        df$size <- obs_size
+        pal <- rep("black", 1 + max(df$id, na.rm = TRUE))
+        df$plot_point <- ifelse(df$obs == "obs", 1, NA)
+    }
     g <- ggtern::ggtern()
+    if(!is.null(sims_df)){
+        g <- g + geom_confidence_tern(data = sims_df,
+                                      aes(x = S, y = I, z = R, group = t),
+                                      col = "black", breaks = .95)
+    }
     g <- g +
         ggplot2::geom_path(data = df,
                            ggtern::aes(S_mean, I_mean, R_mean, group = factor(data_type),
                                        color = factor(data_type)), size = 2, alpha = .7)  + 
         ggplot2::geom_point(data = df,
                             ggtern::aes(S_mean, I_mean, R_mean * plot_point,
-                                        fill = factor(id), shape = obs, size = size))
+                                        fill = factor(id), shape = obs), size = df$size)
     g <-  g +  ggtern::theme_hideticks() + ggtern::theme_showarrows() + 
         ggtern::theme(tern.axis.text = ggplot2::element_text(size = 25,
                                                              family = "Palatino"),
@@ -412,10 +439,14 @@ plot_ests.ternary <- function(df, pretty = TRUE, n_obs = 10, obs_size = 1){
                                               paste("Day",
                                               (n_obs) * (0:(max(df$id, na.rm = TRUE)-1)) + min(df$t))
                                               ),
-                                   values = pal) +
-        ggplot2::labs(L = "", T = "", R = "") +
-        ggplot2::scale_size_continuous(guide = FALSE) + 
-        ggplot2::guides(fill = ggplot2::guide_legend(override.aes = list(shape = 21, size = 3))) 
+                                   values = pal, guide = show_time) +
+        ggplot2::labs(L = "", T = "", R = "") 
+                                        # ggplot2::scale_size_continuous(guide = FALSE) +
+    if(show_time){
+        g <- g + 
+            ggplot2::guides(fill = ggplot2::guide_legend(
+                                                override.aes = list(shape = 21, size = 3)))
+    }
 
 ##    print(g)
       
