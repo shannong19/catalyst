@@ -34,7 +34,13 @@ plot_ests <- function(obs, ests, plot_type = "state",
 
     ## format obs
     obs_df <- format_obs(obs, plot_type, CI)
-    ests_df <- format_ests(ests, plot_type, CI)
+    if(!is.null(ests)){
+        ests_df <- format_ests(ests, plot_type, CI)
+        do_plot_ests <- TRUE
+    } else{
+        ests_df <- NULL
+        do_plot_ests <- FALSE
+    }
     df <- rbind(obs_df, ests_df)
 
 
@@ -46,7 +52,9 @@ plot_ests <- function(obs, ests, plot_type = "state",
 
     if(plot_type == "state"){
 
-        g <- plot_ests.state(df, free_scales = free_scales, obs_size = obs_size)
+
+        g <- plot_ests.state(df, free_scales = free_scales, obs_size = obs_size,
+                             do_plot_ests = do_plot_ests)
         g <- g + ggplot2::labs(x = xlab, y = ylab,
                                title = title,
                                subtitle = subtitle) +
@@ -315,9 +323,11 @@ format_obs <- function(obs, plot_type, CI){
 #' 
 #' @param df data frame with columns "t", "obs", "state" (one of "S", "I", or "R"), "mean", and optionally "var",  along with "data_type"
 #' @param pretty logical.  Default is TRUE
+#' @param do_plot_ests logical. Default is TRUE
 #' @return ggplot
 plot_ests.state <- function(df, pretty = TRUE, free_scales = FALSE,
-                            obs_size = obs_size){
+                            obs_size = obs_size,
+                            do_plot_ests = TRUE){
 
     t0 <- min(df$t, na.rm = TRUE)
     N <- df$mean[df$t == t0 & df$state == "S" & !is.na(df$mean)] +
@@ -326,7 +336,15 @@ plot_ests.state <- function(df, pretty = TRUE, free_scales = FALSE,
     scale_arg <- ifelse(free_scales, "free_y", "fixed")
     g <- ggplot2::ggplot(data = df,
                          ggplot2::aes(x= t, group = data_type)) +
-        ggplot2::facet_wrap(~state, nrow = 3, scales = scale_arg) 
+        ggplot2::facet_wrap(~state, nrow = 3, scales = scale_arg)
+    if(!do_plot_ests){
+        g <-  g +
+            ggplot2:: geom_point(ggplot2::aes(y = obs / N * 100,
+                                          col = factor(data_type)),
+                                 col = "black", size = obs_size)
+        return(g)
+
+    }
       
     if("var" %in% colnames(df)){
         g <- g +
@@ -388,12 +406,17 @@ plot_ests.loglinear <- function(df, pretty = TRUE){
 #' 
 #' @param df data frame with columns "t", "S_mean", "I_mean", "R_mean" and "data_type"
 #' @param pretty logical.  Default is TRUE
-#' @param number of dates to plot
+#' @param n_obs number of dates to plot that differ from the others
+#' @param obs_size size of observation points
+#' @param CI should we plot CI
+#' @param sims_df original simulations, default is NULL
+#' @param show_time default is TRUE
 #' @return ggplot
 plot_ests.ternary <- function(df, pretty = TRUE, n_obs = 10, obs_size = 2,
                               CI = FALSE,
                               sims_df = NULL,
                               show_time = TRUE){
+
 
 
     df$id <- ifelse(df$t %% n_obs == 0, df$t / n_obs + 1, 0)
@@ -413,9 +436,11 @@ plot_ests.ternary <- function(df, pretty = TRUE, n_obs = 10, obs_size = 2,
     }
     g <- ggtern::ggtern()
     if(!is.null(sims_df)){
-        g <- g + geom_confidence_tern(data = sims_df,
-                                      aes(x = S, y = I, z = R, group = t),
-                                      col = "black", breaks = .95)
+        sims_df <- sims_df[sims_df$t %% n_obs == 0, ]
+        g <- g + ggtern::geom_confidence_tern(data = sims_df,
+                                              ggtern::aes(x = S, y = I, z = R, group = paste(t, data_type),
+                                              col = factor(data_type)),
+                                              breaks = .95)
     }
     g <- g +
         ggplot2::geom_path(data = df,
@@ -439,13 +464,16 @@ plot_ests.ternary <- function(df, pretty = TRUE, n_obs = 10, obs_size = 2,
                                               paste("Day",
                                               (n_obs) * (0:(max(df$id, na.rm = TRUE)-1)) + min(df$t))
                                               ),
-                                   values = pal, guide = show_time) +
-        ggplot2::labs(L = "", T = "", R = "") 
+                                   values = pal, guide = show_time
+                                  ) +
+        ggplot2::labs(L = "", T = "", R = "")  
                                         # ggplot2::scale_size_continuous(guide = FALSE) +
     if(show_time){
         g <- g + 
-            ggplot2::guides(fill = ggplot2::guide_legend(
-                                                override.aes = list(shape = 21, size = 3)))
+            ggplot2::guides(fill = ggplot2::guide_legend(ncol = 3,
+                                                         override.aes = list(shape = 21, size = 3)),
+                            col = ggplot2::guide_legend(ncol = 1),
+                            shape = ggplot2::guide_legend(ncol = 1))
     }
 
 ##    print(g)

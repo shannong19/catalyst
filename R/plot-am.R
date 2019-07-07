@@ -34,14 +34,10 @@ am_plot_mean_var <- function(X, obs = NULL,
     }
     N <- X$S[1] + X$I[1] + X$R[1]
     Xm <- reshape2::melt(X, id.vars = c("t", "ll", "model"))
-    ## Extract mean and variance plyr 4eva
-    df <- plyr::ddply(Xm, .var = c("t", "variable", "model"),
-                      .fun = function(df){
-                          c("mean" = mean(df$value),
-                            "var" = var(df$value))
-                      })
+    Xm <- Xm %>% dplyr::group_by(variable, t, model) %>%
+        dplyr::summarize(mean = mean(value), var = var(value))
     g <- ggplot2::ggplot() +
-        ggplot2::geom_line(data = df,
+        ggplot2::geom_line(data = Xm,
                          ggplot2::aes(x = t, y = mean / N * 100, group = factor(model),
                                       col = factor(model)),
                          size = 1) +
@@ -52,7 +48,7 @@ am_plot_mean_var <- function(X, obs = NULL,
         ggplot2::facet_wrap(~variable, nrow = 3, scales = "free_y")
     if(plot_var){
         g <- g + 
-            ggplot2::geom_ribbon(data = df, ggplot2::aes(x = t, group = factor(model),
+            ggplot2::geom_ribbon(data = Xm, ggplot2::aes(x = t, group = factor(model),
                                                          ymin = mean / N * 100 - 2 * sqrt(var)/ N * 100,
                                                          ymax = mean / N * 100 + 2 * sqrt(var)/ N * 100,
                                                          fill = factor(model)),
@@ -111,7 +107,8 @@ plot_epidemic_summary <- function(sims_list, N,
                                   do_facet = FALSE,
                                   do_color_ramp = FALSE,
                                   pal = "Greys",
-                                  legend_name = latex2exp::TeX("$\\rho$")){
+                                  legend_name = latex2exp::TeX("$\\rho$"),
+                                  bg = FALSE){
 
     df <- summarize_epidemic(sims_list, N, summary_fxn)
 
@@ -136,7 +133,8 @@ plot_epidemic_summary <- function(sims_list, N,
                                   do_facet = do_facet,
                                   do_color_ramp = do_color_ramp,
                                   pal = pal,
-                                  legend_name = legend_name)
+                                  legend_name = legend_name,
+                                  bg = bg)
    
     return(list(g1 = plot_list$g1, g2 = plot_list$g2,
                 g3 = plot_list$g3,
@@ -244,8 +242,10 @@ plot_epidemic_df <- function(df, N, many_groups, cols = "black",
                              do_facet = FALSE,
                              do_color_ramp = FALSE,
                              pal = "Greys",
-                             legend_name = latex2exp::TeX("$\\rho$")
+                             legend_name = latex2exp::TeX("$\\rho$"),
+                             bg = FALSE
                              ){
+
 
 
 
@@ -268,8 +268,10 @@ plot_epidemic_df <- function(df, N, many_groups, cols = "black",
     }
     if(do_color_ramp){
         df$color_ramp <- as.numeric(as.character(df$model))
+    } else {
+        df$color_ramp <- factor(df$Type)
     }
-
+ 
      g1 <- ggplot2::ggplot(data = df,
                           ggplot2::aes(x = mean_max_I / N * 100,
                                        y = mean_max_t,
@@ -315,7 +317,8 @@ plot_epidemic_df <- function(df, N, many_groups, cols = "black",
         ## ggplot2::geom_errorbarh(ggplot2::aes(xmin = Imin,
         ##                                      xmax = Imax)) +
        
- 
+
+
     ## Plot max total I vs max I
     g2 <- ggplot2::ggplot(data = df,
                           ggplot2::aes(x = mean_max_I / N * 100,
@@ -328,7 +331,11 @@ plot_epidemic_df <- function(df, N, many_groups, cols = "black",
                                        a = 2 * sqrt(var_max_I) / N * 100,
                                        b = 2 * sqrt(var_sum_I) / N * 100,
                                        angle = 0,
-                                       fill = color_ramp)) +
+                                       fill = color_ramp))
+    if(bg){
+        g2 <- g2 +         ggplot2::geom_point(size = 3, col = "black")
+    }
+    g2 <-  g2 + 
         ggplot2::geom_point(size = 2) + my_theme() +
         ggplot2::labs(x = "Peak % infectious over all days",
              y = "Final size (%)",
@@ -340,7 +347,12 @@ plot_epidemic_df <- function(df, N, many_groups, cols = "black",
         ##                                     ymax = sumImax)) +
         ## ggplot2::geom_errorbarh(ggplot2::aes(xmin = Imin,
         ##                                      xmax = Imax)) +
-        ggplot2::guides(color = col_guide, shape = col_guide, fill = col_guide) +
+        ggplot2::guides(color = col_guide, shape = col_guide, fill = col_guide)
+
+    if(bg){
+           g2 <-  g2 + ggforce::geom_ellipse(alpha = alpha, size  =2, linetype = lty, col = "black")
+    }
+    g2 <- g2 + 
         ggforce::geom_ellipse(alpha = alpha, size  =1, linetype = lty)
     if(show_labels){
         g2 <- g2 + ggplot2::geom_text(ggplot2::aes(label = model), nudge_x = -3/ N * 100,
@@ -396,7 +408,7 @@ plot_epidemic_df <- function(df, N, many_groups, cols = "black",
         g3 <-  g3 +  ggplot2::scale_color_distiller(legend_name, palette = pal, direction  = 1) +
             ggplot2::scale_fill_distiller(legend_name, palette = pal, direction  = 1) 
     } else{
-        g2 <- g3 +  ggplot2::scale_color_manual(values = cols, name = type_name, labels = labs) + 
+        g3 <- g3 +  ggplot2::scale_color_manual(values = cols, name = type_name, labels = labs) + 
             ggplot2::scale_fill_manual(values = cols, name = type_name, labels = labs) 
     }
 
@@ -404,3 +416,4 @@ plot_epidemic_df <- function(df, N, many_groups, cols = "black",
     gridExtra::grid.arrange(g1, g2, g3, nrow = 3)
     return(list(g1 = g1, g2 = g2, g3 = g3))
 }
+
